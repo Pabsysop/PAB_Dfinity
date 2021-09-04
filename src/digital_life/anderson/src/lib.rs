@@ -187,11 +187,11 @@ fn post_upgrade() {
     }
 }
 
-// #[cfg(any(target_arch = "wasm32", test))]
-// fn main() {}
+#[cfg(any(target_arch = "wasm32", test))]
+fn main() {}
 
-// #[cfg(not(any(target_arch = "wasm32", test)))]
-// fn main() {
-//     candid::export_service!();
-//     std::print!("{}", __export_service());
-// }
+#[cfg(not(any(target_arch = "wasm32", test)))]
+fn main() {
+    candid::export_service!();
+    std::print!("{}", __export_service());
+}

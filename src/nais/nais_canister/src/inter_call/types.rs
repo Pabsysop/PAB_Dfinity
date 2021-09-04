@@ -1,6 +1,13 @@
 use candid::{CandidType, Nat, Principal};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize};
 use std::fmt;
+
+type VisaNFTCanisterId = Principal;
+
+pub struct NFTContractMeta {
+    name: String, 
+    symbol: String
+}
 
 #[derive(CandidType, Clone, Deserialize)]
 pub enum WasmType {

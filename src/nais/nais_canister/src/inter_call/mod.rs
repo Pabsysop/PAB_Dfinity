@@ -2,10 +2,11 @@ pub mod types;
 
 use ic_cdk::api;
 use candid::{CandidType, Principal};
+use nft::{NFTPayload, Property, NftEgg, Value};
 use serde::Deserialize;
 use types::*;
 
-// type NFTCanisterId = Principal;
+use crate::VisaNFTCanisterId;
 
 pub async fn create_canister_call(args: CreateCanisterArgs) -> Result<CreateResult, String> {
     #[derive(CandidType)]
@@ -26,7 +27,7 @@ pub async fn create_canister_call(args: CreateCanisterArgs) -> Result<CreateResu
         Ok(x) => x,
         Err((code, msg)) => {
             return Err(format!(
-                "An error happened during the call: {}: {}",
+                "An error happened during create_canister call: {}: {}",
                 code as u8, msg
             ))
         }
@@ -102,7 +103,7 @@ pub async fn install_canister(
         Ok(x) => x,
         Err((code, msg)) => {
             return Err(format!(
-                "An error happened during the call: {}: {}",
+                "An error happened during install_code call: {}: {}",
                 code as u8, msg
             ))
         }
@@ -122,22 +123,35 @@ pub async fn install_canister(
 //     };
 //     Ok(())
 // }
-// pub async fn mint_nft_call(nft_canister: &NFTCanisterId, egg: NftEgg) -> Result<Nat, String> {
-//     let (create_result,): (Nat,) = match api::call::call(
-//         nft_canister.clone(),
-//         "mint", 
-//         (egg,)
-//     ).await 
-//     {
-//         Ok(x) => x,
-//         Err((code, msg)) => {
-//             return Err(format!(
-//                 "An error happened during the call: {}: {}",
-//                 code as u8, msg
-//             ))
-//         }
-//     };
 
-//     Ok(create_result)
-// }
+pub async fn mint_citizen_nft(nft_canister: &VisaNFTCanisterId, citizen: Principal) -> Result<String, String> {
+    let egg = NftEgg {
+        payload: NFTPayload::Payload(vec![0x00]),
+        content_type: Default::default(),
+        owner: citizen,
+        properties: vec![Property{
+            name : String::from("citizenship"),
+            value : Value::Empty,
+            immutable : false
+        }],
+        is_private: true
+    };
+    
+    let (nft_id,): (String,) = match api::call::call(
+        nft_canister.clone(),
+        "mint", 
+        (egg,)
+    ).await 
+    {
+        Ok(x) => x,
+        Err((code, msg)) => {
+            return Err(format!(
+                "An error happened during the call: {}: {}",
+                code as u8, msg
+            ))
+        }
+    };
+
+    Ok(nft_id)
+}
 

@@ -35,9 +35,9 @@ pub struct  Property {
     pub immutable : bool
 }
 #[derive(CandidType, Deserialize)]
-pub struct NFTPayload {
-    pub payload: u8,
-    pub staged_data: Vec<u8>
+pub enum NFTPayload {
+    Payload(Vec<u8>),
+    StagedData
 }
 #[derive(CandidType, Deserialize)]
 pub struct NFTProperty {
@@ -50,7 +50,7 @@ pub struct  NftEgg {
     pub payload: NFTPayload,
     pub content_type: String,
     pub owner: Principal,
-    pub properties: Property,
+    pub properties: Vec<Property>,
     pub is_private: bool
 }
 
