@@ -1,0 +1,44 @@
+{
+  "canisters": {
+    "anderson": {
+      "build": "make anderson",
+      "candid": "src/digital_life/anderson/anderson.did",
+      "wasm": "target/wasm32-unknown-unknown/release/anderson_opt.wasm",
+      "type": "custom"
+    },
+    "board": {
+      "build": "make board_canister",
+      "candid": "src/boards/board_canister/board_canister.did",
+      "wasm": "target/wasm32-unknown-unknown/release/board_canister_opt.wasm",
+      "type": "custom"
+    },
+    "Admin_canister": {
+      "build": "make Admin",
+      "candid": "src/NAI/Admin_canister/Admin_canister.did",
+      "wasm": "target/wasm32-unknown-unknown/release/Admin_canister_opt.wasm",
+      "type": "custom"
+    },
+    "pab_frontend_assets": {
+      "dependencies": [
+        "anderson",
+        "board",
+        "Admin_canister",
+      ],
+      "frontend": {
+        "entrypoint": "src/pab_frontend_assets/assets/index.html"
+      },
+      "source": [
+        "src/pab_frontend_assets/assets",
+        "dist/pab_frontend_assets/"
+      ],
+      "type": "assets"
+    }
+  },
+  "networks": {
+    "local": {
+      "bind": "127.0.0.1:8000",
+      "type": "ephemeral"
+    }
+  },
+  "version": 1
+}

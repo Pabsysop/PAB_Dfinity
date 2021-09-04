@@ -1,0 +1,23 @@
+[workspace]
+members = [
+    "src/digital_life/Ontology",
+    "src/digital_life/human",
+    "src/digital_life/anderson",
+    "src/boards/board_canister",
+    "src/boards/event",
+    "src/boards/room",
+    "src/boards/scene",
+    "src/boards/wall",
+    "src/boards/consensus",
+    "src/boards/workshop",
+    "src/boards/board",
+    "src/boards/visa",
+    "src/boards/market",
+    "src/nais/nais_canister",
+    "src/nais/assets_canister",
+    "src/nft"
+]
+
+[profile.release]
+opt-level = 'z'
+

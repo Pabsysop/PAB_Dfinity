@@ -1,0 +1,16 @@
+[package]
+name = "workshop"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ic-cdk = "0.3.0"
+ic-cdk-macros = "0.3.0"
+url = "2.2.2"
+uuid = { version = "0.8.2", features = ["serde", "v4", "wasm-bindgen"] }
+visa = { path = "../visa" }
+market = { path = "../market" }
+consensus = { path = "../consensus" }
+scene = { path = "../scene"}

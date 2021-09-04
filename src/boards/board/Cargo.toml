@@ -1,0 +1,19 @@
+[package]
+name = "board"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ic-cdk = "0.3.0"
+ic-cdk-macros = "0.3.0"
+ic-types = "0.2.2"
+consensus = { path = "../consensus" }
+room = { path = "../room"}
+event = { path = "../event"}
+scene = { path = "../scene"}
+workshop = { path = "../workshop"}
+visa = { path = "../visa" }
+market = { path = "../market" }
+url = "2.2.2"

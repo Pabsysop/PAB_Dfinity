@@ -1,0 +1,32 @@
+type CreateResult = record { canister_id : principal };
+type Fee = variant { Fixed : nat; RateWithLowestLimit : record { nat; nat8 } };
+type IssueTokenArgs = record {
+  fee : Fee;
+  decimals : nat8;
+  owner : principal;
+  logo : vec nat8;
+  name : text;
+  total_supply : nat;
+  symbol : text;
+};
+type Result = variant { Ok; Err };
+type Result_1 = variant { Ok : CreateResult; Err : text };
+type TokenStoreWASMArgs = record {
+  wasm_module : vec nat8;
+  wasm_type : WasmType;
+};
+type WasmType = variant { PAB; Life; AvatarNFT; Board; VisaNFT };
+service : () -> {
+  ApplyCitizenship : (text) -> (opt principal);
+  BuildCivilization : () -> (opt principal);
+  DeployNFTContract : (WasmType) -> (principal);
+  GenesisCode : () -> (text) query;
+  Initialize : () -> (Result);
+  IssuePAB : (IssueTokenArgs) -> (Result_1);
+  PauseBoard : (principal) -> ();
+  ResumeBoard : (principal) -> ();
+  Sleep : (principal) -> ();
+  WakeUp : (principal) -> ();
+  setFeeTokenID : (principal) -> ();
+  uploadTokenWasm : (TokenStoreWASMArgs) -> ();
+}
