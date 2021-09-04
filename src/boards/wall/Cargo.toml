@@ -1,0 +1,11 @@
+[package]
+name = "wall"
+version = "0.0.1"
+authors = ["Kristofer Lund <kristofer@fmckl.se>"]
+edition = "2018"
+
+[dependencies]
+ic-cdk = "0.3.0"
+ic-cdk-macros = "0.3.0"
+ic-types = "0.1.2"
+serde = "1.0.111"

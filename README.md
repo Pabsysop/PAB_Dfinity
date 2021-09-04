@@ -1,3 +1,2 @@
-# PAB_Dfinity
+# pab_smartcontract_dfinity
 
-Smartcontract written in Rust for dfinity.

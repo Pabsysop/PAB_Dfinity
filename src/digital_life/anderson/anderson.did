@@ -1,0 +1,38 @@
+type Mood = variant { Smart; Sleepwalking; Dizzy; Clear };
+type NFT = record {
+  src : text;
+  title : text;
+  chain : text;
+  unit : text;
+  price : float64;
+};
+type Result = variant { Ok : text; Err };
+type Visa = record {
+  visa_type : VisaType;
+  nft_address : text;
+  expire_date : nat32;
+  issue_date : nat32;
+  board : opt principal;
+};
+type VisaType = variant { BoardMember; Citizenship };
+service : (
+  principal,
+  nat64,
+  opt principal,
+  opt Visa,
+  opt principal,
+  opt principal,
+) -> {
+  Born : (principal) -> (Result);
+  Die : () -> ();
+  HowOldAreYou : () -> (nat64);
+  Like : () -> ();
+  Listen : (text) -> ();
+  ReceiveNFT : (NFT) -> ();
+  Record : () -> ();
+  See : () -> ();
+  Sleep : () -> ();
+  Talk : (text) -> ();
+  UpdatePassword : (text) -> ();
+  WakeUp : () -> (Mood);
+}

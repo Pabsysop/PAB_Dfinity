@@ -1,0 +1,29 @@
+[package]
+name = "board_canister"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ic-cdk = "0.3.0"
+ic-cdk-macros = "0.3.0"
+ic-types = "0.2.2"
+candid = "0.7.6"
+lazy_static = "1.4.0"
+serde = "1.0.111"
+serde_cbor = "0.11"
+serde_bytes = "0.11"
+serde_with = "1.6.2"
+hex = "0.4.3"
+libsecp256k1 = "0.6.0"
+easy-hasher = "2.2.1"
+consensus = { path = "../consensus" }
+room = { path = "../room"}
+event = { path = "../event"}
+scene = { path = "../scene"}
+workshop = { path = "../workshop"}
+visa = { path = "../visa" }
+market = { path = "../market" }
+nft = { path = "../../nft" }
+board = { path = "../board" }
