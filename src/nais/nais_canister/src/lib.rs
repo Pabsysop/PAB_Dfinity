@@ -13,6 +13,7 @@
  use ic_cdk::api::{caller, id};
  use ic_cdk::api::call::call;
  use ic_cdk_macros::*;
+ use nft::TransferResult;
  use std::string::String;
  use std::collections::HashMap;
  use inter_call::*;

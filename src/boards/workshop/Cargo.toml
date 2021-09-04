@@ -8,8 +8,8 @@ edition = "2018"
 [dependencies]
 ic-cdk = "0.3.0"
 ic-cdk-macros = "0.3.0"
-url = "2.2.2"
-uuid = { version = "0.8.2", features = ["serde", "v4", "wasm-bindgen"] }
+candid = "0.7.6"
+serde = "1.0.116"
 visa = { path = "../visa" }
 market = { path = "../market" }
 consensus = { path = "../consensus" }

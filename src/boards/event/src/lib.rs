@@ -1,41 +1,44 @@
-use ic_cdk::export::Principal;
-use url::Url;
-use std::str::FromStr;
 use visa::Ticket;
-use uuid::Uuid;
+use candid::{CandidType, Principal};
+use serde::{Serialize, Deserialize};
 
 const BASE_FEE: u32 = 1;
 static COMMON_TITLE: &str = "Anonymous Event";
 static COMMON_VIEW: &str = "https://partyboard.org/media/figure/post_9.jpg";
 
+#[derive(Debug, Deserialize, Serialize, CandidType)]
 pub struct Event {
     id: String,
     title: String,
-    owner: String,
+    owner: Principal,
     cover: String,
     pub tickets: Vec<Ticket>,
     pub moderator: Vec<String>,
     pub members: Vec<String>,
 }
 
-impl Event{
-
-    pub fn default(owner: &str) -> Event {
-        Event::build(String::from(COMMON_TITLE), String::from(COMMON_VIEW), String::from(owner))
-    }
-
-    fn build(title: String, cover: String, owner: String) -> Event {
-        let event = Event {
-            id: Uuid::new_v4().to_hyphenated().to_string(),
-            title,
-            cover,
+impl Default for Event {
+    fn default() -> Event{
+        Event {
+            id: Default::default(),
+            title: String::from(COMMON_TITLE),
+            cover: String::from(COMMON_VIEW),
+            owner: Principal::anonymous(),
             members: vec![],
             tickets: vec![],
-            owner,
             moderator: vec![],
-        };
+        }
+    }
 
-        event
+}
+
+impl Event{
+
+    fn build(&mut self, title: String, cover: String, owner: Principal, id: String){
+        self.title = title;
+        self.cover = cover;
+        self.owner = owner;
+        self.id = id;
     }
 
     pub fn add_member(&mut self, member_id: String){

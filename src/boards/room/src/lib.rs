@@ -1,14 +1,14 @@
-use uuid::Uuid;
-
-use crate::channel::Channel;
-use crate::group::Group;
-use crate::message::Message;
-use visa::Ticket;
-
 mod group;
-mod channel;
 mod message;
 mod voice;
+
+use std::vec;
+
+use group::Group;
+use message::Message;
+use visa::Ticket;
+use candid::{CandidType, Principal};
+use serde::{Serialize, Deserialize};
 
 const BASE_FEE: u32 = 1;
 static COMMON_TITLE: &str = "Anonymous Room";
@@ -20,39 +20,44 @@ trait  Plugin<T> {
     fn disable(){}
 }
 
+#[derive(Debug, Deserialize, Serialize, CandidType)]
 pub struct Room {
     pub id: String,
     pub title: String,
     pub cover: String,
     pub tickets: Vec<Ticket>,
-    pub owner: String,
+    pub owner: Principal,
     pub moderator: Vec<String>,
     pub members: Vec<String>,
     pub groups: Vec<Group>,
-    pub channel: Channel,
+    pub channel: String,
     pub messages: Vec<Message>,
+}
+impl Default for Room {
+    fn default() -> Room{
+        Room {
+            id: Default::default(),
+            title: String::from(COMMON_TITLE),
+            cover: String::from(COMMON_VIEW),
+            owner: Principal::anonymous(),
+            members: vec![],
+            tickets: vec![],
+            moderator: vec![],
+            groups: vec![],
+            channel:  Default::default(),
+            messages: vec![]
+        }
+    }
+
 }
 
 impl Room {
 
-    pub fn default(owner: &str) -> Result<Room, String> {
-        Room::build(String::from(COMMON_TITLE), String::from(COMMON_VIEW), String::from(owner))
-    }
-
-    fn build(title: String, cover: String, owner: String) -> Result<Room, String> {
-        let room = Room {
-            id: Uuid::new_v4().to_hyphenated().to_string(),
-            title,
-            cover,
-            members: vec![],
-            groups: vec![],
-            channel: Channel { id: "".to_string(), session: "".to_string() },
-            tickets: vec![],
-            owner,
-            moderator: vec![],
-            messages: vec![]
-        };
-        Ok(room)
+    fn build(&mut self, title: String, cover: String, owner: Principal, id: String){
+        self.title = title;
+        self.cover = cover;
+        self.owner = owner;
+        self.id = id;
     }
 
     pub fn add_member(&mut self, member_id: String){

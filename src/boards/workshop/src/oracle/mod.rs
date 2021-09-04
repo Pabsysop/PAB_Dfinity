@@ -4,12 +4,9 @@ mod engine;
 mod mapping_metadata;
 mod summary;
 
-use crate::Workshop;
-use crate::oracle::config::Config;
-use crate::oracle::mapping_metadata::MappingMetadata;
-use ic_cdk::api::time;
-use crate::oracle::engine::Engine;
-use url::Url;
+use config::Config;
+use mapping_metadata::MappingMetadata;
+use engine::Engine;
 
 static COMMON_VIEW: &str = "https://partyboard.org/media/blog/blog_2.jpg";
 

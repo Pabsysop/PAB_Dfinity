@@ -2,8 +2,7 @@ pub mod types;
 
 use ic_cdk::api;
 use candid::Principal;
-use nft::NFT;
-use crate::inter_call::types::{UpdateSettingsArgs, TokenStoreWASMArgs, NftEgg};
+use nft::*;
 
 pub async fn listen_to(to: Principal, args: String) -> Result<(), String> {
     match api::call::call(to, "Listen", (args,)).await
@@ -18,7 +17,7 @@ pub async fn listen_to(to: Principal, args: String) -> Result<(), String> {
     };
     Ok(())
 }
-pub async fn send_nft_call(to: Principal, args: UpdateSettingsArgs) -> Result<(), String> {
+pub async fn send_nft_call(to: Principal, args: ()) -> Result<(), String> {
     match api::call::call(to, "RcvNft", (args,)).await
     {
         Ok(x) => x,
