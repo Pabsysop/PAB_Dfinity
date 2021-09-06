@@ -6,8 +6,6 @@ use nft::{NFTPayload, Property, NftEgg, Value};
 use serde::Deserialize;
 use types::*;
 
-use crate::VisaNFTCanisterId;
-
 pub async fn create_canister_call(args: CreateCanisterArgs) -> Result<CreateResult, String> {
     #[derive(CandidType)]
     struct In {

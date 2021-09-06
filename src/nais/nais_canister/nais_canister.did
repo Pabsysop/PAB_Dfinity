@@ -11,15 +11,12 @@ type IssueTokenArgs = record {
 };
 type Result = variant { Ok; Err };
 type Result_1 = variant { Ok : CreateResult; Err : text };
-type TokenStoreWASMArgs = record {
-  wasm_module : vec nat8;
-  wasm_type : WasmType;
-};
+type StoreWASMArgs = record { wasm_module : vec nat8; wasm_type : WasmType };
 type WasmType = variant { PAB; Life; AvatarNFT; Board; VisaNFT };
 service : () -> {
   ApplyCitizenship : (text) -> (opt principal);
   BuildCivilization : () -> (opt principal);
-  DeployNFTContract : (WasmType) -> (principal);
+  DeployNFTContract : (WasmType) -> (text);
   GenesisCode : () -> (text) query;
   Initialize : () -> (Result);
   IssuePAB : (IssueTokenArgs) -> (Result_1);
@@ -28,5 +25,5 @@ service : () -> {
   Sleep : (principal) -> ();
   WakeUp : (principal) -> ();
   setFeeTokenID : (principal) -> ();
-  uploadTokenWasm : (TokenStoreWASMArgs) -> ();
+  uploadWasm : (StoreWASMArgs) -> ();
 }

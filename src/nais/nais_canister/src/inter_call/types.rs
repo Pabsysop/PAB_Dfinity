@@ -2,20 +2,12 @@ use candid::{CandidType, Nat, Principal};
 use serde::{Deserialize};
 use std::fmt;
 
-type VisaNFTCanisterId = Principal;
-
-pub struct NFTContractMeta {
-    name: String, 
-    symbol: String
-}
+pub type VisaNFTCanisterId = Principal;
 
 #[derive(CandidType, Clone, Deserialize)]
-pub enum WasmType {
-    PAB,
-    Board,
-    Life,
-    AvatarNFT,
-    VisaNFT
+pub struct NFTContractMeta {
+    pub name: String, 
+    pub symbol: String
 }
 
 #[derive(CandidType, Clone, Deserialize)]
@@ -60,8 +52,17 @@ pub struct CreateResult {
 
 pub type IssueResult = CreateResult;
 
+#[derive(CandidType, Clone, Deserialize)]
+pub enum WasmType {
+    PAB,
+    Board,
+    Life,
+    AvatarNFT,
+    VisaNFT
+}
+
 #[derive(CandidType, Deserialize)]
-pub struct TokenStoreWASMArgs {
+pub struct StoreWASMArgs {
     pub wasm_type: WasmType,
     #[serde(with = "serde_bytes")]
     pub wasm_module: Vec<u8>,

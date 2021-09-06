@@ -208,7 +208,7 @@ async fn new_nft_contract(wtype: WasmType) -> Result<NFTCanisterId, String> {
             match result {
                 Err(e) => ic_cdk::trap(&e),
                 Ok(create_result) => unsafe{
-                    let meta = NFTContractMeta{name:"PAB Visa NFT", symbol:"PVN"};
+                    let meta = NFTContractMeta{name:"PAB Visa NFT".to_string(), symbol: "PVN".to_string()};
                     let install_args = encode_args((
                         vec![id()], meta
                     ))
@@ -235,7 +235,7 @@ fn genesis_code() -> String{
     let mut code_str = String::from("");
     let codes = storage::get::<GenesisCode>();
     for (key, _value) in codes {
-        code_str += key;
+        code_str = code_str + key + ",";
     }
 
     code_str
@@ -301,13 +301,18 @@ fn genesis_code() -> String{
              let life = new_life().await.unwrap();
              increase_population(applicant, life);
              codes.insert(code.clone(), (inviter, Some(life.to_text())));
-             let nft_canister = storage::get::<NFTCanisterId>();
-             let result = mint_citizen_nft(nft_canister, life).await;
-             match result {
-                 Err(e) => ic_cdk::trap(e.as_str()),
-                 Ok(citizen_id) => return Some(life.clone())
-             }
-         }
+             let res = Principal::from_text(storage::get::<NFTCanisterId>());
+             match res {
+                 Err(e) => ic_cdk::trap(e.to_string().as_str()),
+                 Ok(nft_canister) => {
+                    let result = mint_citizen_nft(&nft_canister, life).await;
+                    match result {
+                        Err(e) => ic_cdk::trap(e.as_str()),
+                        Ok(citizen_id) => return Some(life.clone())
+                    }
+                }
+            }
+        }
          Some(_) => ic_cdk::trap(fail_msg)
      }
  }
@@ -398,9 +403,9 @@ fn genesis_code() -> String{
      unsafe { FEE_TOKEN_ID = token_id };
  }
  
- #[update(name = "uploadTokenWasm")]
- #[candid_method(update, rename = "uploadTokenWasm")]
- fn upload_token_wasm(args: TokenStoreWASMArgs) {
+ #[update(name = "uploadWasm")]
+ #[candid_method(update, rename = "uploadWasm")]
+ fn upload_wasm(args: StoreWASMArgs) {
      _must_initialized();
      _only_owner();
  
