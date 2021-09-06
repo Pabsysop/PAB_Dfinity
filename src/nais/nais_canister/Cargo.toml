@@ -17,7 +17,6 @@ ic-cdk = "0.3.0"
 ic-cdk-macros = "0.3.0"
 ic-types = "0.2.2"
 candid = "0.7.6"
-# uuid = { version = "0.8.2", features = ["serde", "v4", "wasm-bindgen"] }
 serde = "1.0.116"
 serde_cbor = "0.11"
 serde_bytes = "0.11"

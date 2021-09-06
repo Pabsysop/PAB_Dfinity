@@ -1,22 +1,17 @@
-use ic_cdk::export::Principal;
-use url::Url;
-use std::str::FromStr;
-use std::collections::HashMap;
+use candid::{CandidType, Principal};
+use serde::{Serialize, Deserialize};
 use consensus::Consensus;
-use ic_cdk::storage;
-use std::ops::Index;
 use room::Room;
 use event::Event;
 use workshop::Workshop;
 use visa::Visa;
 
-const BASE_FEE: u32 = 1;
 static COMMON_TITLE: &str = "Anonymous board";
 static COMMON_VIEW: &str = "https://partyboard.org/media/blog/blog_2.jpg";
-static DEPOSIT: i32 = 0;
 
 type LifeCanisterId = Principal;
 
+#[derive(Debug, Deserialize, Serialize, CandidType)]
 struct Committee {
     pub chairman: Vec<LifeCanisterId>,
     pub member: Vec<LifeCanisterId>
@@ -24,6 +19,7 @@ struct Committee {
 type Point = ();
 type Population = Vec<LifeCanisterId>;
 
+#[derive(Debug, Deserialize, Serialize, CandidType)]
 pub struct Board {
     pub id: String,
     pub title: String,
@@ -39,18 +35,12 @@ pub struct Board {
     invites: Vec<(String,String)>
 }
 
-impl Board {
-
-    pub fn default(ident: String) -> Board{
-        Board::build(String::from(COMMON_TITLE), String::from(COMMON_VIEW), ident)
-    }
-
-    pub fn build(title: String, cover: String, id: String) -> Board {
-
-        let board = Board {
-            id,
-            title,
-            cover,
+impl Default for Board {
+    fn default() -> Board{
+        Board {
+            id: Default::default(),
+            title: String::from(COMMON_TITLE),
+            cover: String::from(COMMON_VIEW),
             map: vec![],
             rooms: Default::default(),
             workshop: vec![],
@@ -59,10 +49,18 @@ impl Board {
             visas: Default::default(),
             committee: Committee {chairman: vec![], member: vec![]},
             population: vec![],
-            invites: vec![]
-        };
+            invites: vec![],
+        }
+    }
 
-        board
+}
+
+impl Board {
+
+    pub fn build(&mut self, title: String, cover: String, id: String) {
+        self.title = title;
+        self.cover = cover;
+        self.id = id;
     }
 
     pub fn set_consensus(&mut self, con: Consensus){

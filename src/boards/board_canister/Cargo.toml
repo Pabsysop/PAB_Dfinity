@@ -25,5 +25,5 @@ scene = { path = "../scene"}
 workshop = { path = "../workshop"}
 visa = { path = "../visa" }
 market = { path = "../market" }
-nft = { path = "../../nft" }
 board = { path = "../board" }
+nft = { path = "../../nft" }

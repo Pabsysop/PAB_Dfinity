@@ -7,9 +7,9 @@ edition = "2018"
 [lib]
 crate-type = ["cdylib"]
 
-#[[bin]]
-#name = "andersonex"
-#path = "src/lib.rs"
+[[bin]]
+name = "andersonex"
+path = "src/lib.rs"
 
 [dependencies]
 ic-cdk = "0.3.0"

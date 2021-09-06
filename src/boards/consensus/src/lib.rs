@@ -1,23 +1,12 @@
-use std::collections::HashMap;
+use candid::{CandidType};
+use serde::{Serialize, Deserialize};
 
-type Calculator = fn () -> ();
-
+#[derive(Debug, Deserialize, Serialize, CandidType)]
 pub enum  Consensus {
     POW,
     POA,
     POS
 }
 
-struct POW<T> {
-    work: HashMap<T,Calculator>,
-}
-
 impl Consensus {
-    fn validate() -> bool {
-        todo!()
-    }
-
-    fn finalize() -> Consensus {
-        todo!()
-    }
 }

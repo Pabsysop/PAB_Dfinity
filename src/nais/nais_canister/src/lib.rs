@@ -4,6 +4,8 @@
  * License    : MIT
  * Maintainer : shiyong <shiyong0248@gmail.com>
  * Stability  : Experimental
+ * Description: The UI canister on the "local" network is "r7inp-6aaaa-aaaaa-aaabq-cai" 
+                nais canister_id rrkah-fqaaa-aaaaa-aaaaq-cai
  */
 
  mod inter_call;
@@ -13,6 +15,7 @@
  use ic_cdk::api::{caller, id};
  use ic_cdk::api::call::call;
  use ic_cdk_macros::*;
+ use nft::TransferResult;
  use std::string::String;
  use std::collections::HashMap;
  use inter_call::*;
@@ -27,11 +30,11 @@
 //  static mut PAB_TOKEN_CANISTER: Principal = Principal::anonymous();
 //  static mut PAB_NFT_CANISTER: Principal = Principal::anonymous();
  const CYCLES_PER_TOKEN: u64 = 2000000000000;
+ static mut POPULATION_QUANTITIES: u64 = 0;
  
  type LifeCanisterId = Principal;
  type BoardCanisterId = Principal;
- type NFTCanisterId = Principal;
-//  type VisaNFTCanisterId = NFTCanisterId;
+ type NFTCanisterId = String;
  type GenesisCode = HashMap<String,(Option<String>, Option<String>)>;
  type CitizenCode = GenesisCode;
  type Living = HashMap<String, LifeCanisterId>;
@@ -83,6 +86,7 @@
  fn increase_population(body: Principal, life: LifeCanisterId) {
      let population = storage::get_mut::<Living>();
      population.insert(body.to_text(),life);
+     unsafe { POPULATION_QUANTITIES += 1; }
  }
  
  fn increase_civilization(board: BoardCanisterId) {
@@ -111,7 +115,7 @@
      let life_bytes = storage::get::<LifeWASMBytes>();
      match &life_bytes.0 {
          None => {
-             ic_cdk::trap("humankind dose not emerge.");
+             ic_cdk::trap("Humankind dose not emerge.");
          }
          Some(o) => {
              let create_args = CreateCanisterArgs {
@@ -123,19 +127,24 @@
                      freezing_threshold: None,
                  },
              };
-             let create_result = create_canister_call(create_args).await?;
-             let install_args = encode_args((
-                 id(),
-             ))
-             .expect("Failed to encode arguments.");
-         
-             match install_canister(&create_result.canister_id, o.clone().into_vec(),
-                                    install_args).await
-             {
-                 Ok(_) => { Ok(create_result.canister_id) }
-                 _ => ic_cdk::trap("new life error")
+             let result = create_canister_call(create_args).await;
+             match result {
+                 Err(e) => ic_cdk::trap(&e),
+                 Ok(create_result) => unsafe{
+                    let install_args = encode_args((
+                        id(),
+                        POPULATION_QUANTITIES,
+                    ))
+                    .expect("Failed to encode arguments.");
+                    match install_canister(&create_result.canister_id, o.clone().into_vec(),
+                                            install_args).await
+                    {
+                        Ok(_) => { Ok(create_result.canister_id) }
+                        Err(e) => ic_cdk::trap(format!("new life mission failed due to : {}",e).as_str())
+                    }    
+                 }
              }
-         }
+        }
      }
  }
  async fn new_board() -> Result<BoardCanisterId, String> {
@@ -145,17 +154,31 @@
              ic_cdk::trap("civilization dose not emerge.");
          }
          Some(o) => {
-             let n = new_canister().await?;
-             let install_args = encode_args((
-                 id(),
-             ))
-             .expect("Failed to encode arguments.");
-                     match install_canister(&n.canister_id, o.clone().into_vec(),
+            let create_args = CreateCanisterArgs {
+                cycles: CYCLES_PER_TOKEN,
+                settings: CanisterSettings {
+                    controllers: Some(vec![id()]),
+                    compute_allocation: None,
+                    memory_allocation: None,
+                    freezing_threshold: None,
+                },
+            };
+           let result = create_canister_call(create_args).await;
+            match result {
+                Err(e) => ic_cdk::trap(&e),
+                Ok(create_result) => unsafe{
+                    let install_args = encode_args((
+                        id(),
+                    ))
+                    .expect("Failed to encode arguments.");
+                     match install_canister(&create_result.canister_id, o.clone().into_vec(),
                                             install_args).await
                      {
-                         Ok(_) => { Ok(n.canister_id) }
-                         _ => ic_cdk::trap("error")
-                     }
+                         Ok(_) => { Ok(create_result.canister_id) }
+                         Err(e) => ic_cdk::trap(format!("new board mission failed due to : {}",e).as_str())
+                    }
+                }
+            }
          },
      }
  }
@@ -172,18 +195,33 @@ async fn new_nft_contract(wtype: WasmType) -> Result<NFTCanisterId, String> {
              ic_cdk::trap("NFT dose not emerge.");
          }
          Some(o) => {
-             let n = new_canister().await?;
-             let install_args = encode_args((
-                 id(),
-             ))
-             .expect("Failed to encode arguments.");
-             
-                     match install_canister(&n.canister_id, o.clone().into_vec(),
-                                            install_args).await
-                     {
-                         Ok(_) => { Ok(n.canister_id) }
-                         _ => ic_cdk::trap("error")
-                     }
+            let create_args = CreateCanisterArgs {
+                cycles: CYCLES_PER_TOKEN,
+                settings: CanisterSettings {
+                    controllers: Some(vec![id()]),
+                    compute_allocation: None,
+                    memory_allocation: None,
+                    freezing_threshold: None,
+                },
+            };
+           let result = create_canister_call(create_args).await;
+            match result {
+                Err(e) => ic_cdk::trap(&e),
+                Ok(create_result) => unsafe{
+                    let meta = NFTContractMeta{name:"PAB Visa NFT".to_string(), symbol: "PVN".to_string()};
+                    let install_args = encode_args((
+                        vec![id()], meta
+                    ))
+                    .expect("Failed to encode arguments.");
+            
+                    match install_canister(&create_result.canister_id, o.clone().into_vec(),
+                                        install_args).await
+                    {
+                        Ok(_) => { Ok(create_result.canister_id.to_string()) }
+                        Err(e) => ic_cdk::trap(format!("new nft mission failed due to : {}",e).as_str())
+                    }
+                }
+            }
          },
      }
  }
@@ -197,7 +235,7 @@ fn genesis_code() -> String{
     let mut code_str = String::from("");
     let codes = storage::get::<GenesisCode>();
     for (key, _value) in codes {
-        code_str += key;
+        code_str = code_str + key + ",";
     }
 
     code_str
@@ -237,7 +275,7 @@ fn genesis_code() -> String{
  pub async fn apply_citizenship(code: String) -> Option<LifeCanisterId> {
      _must_initialized();
  
-     let fail_msg = "invalid invitation code";
+     let fail_msg = "you are not in the invite list";
      let applicant = caller();
      let population = storage::get::<Living>();
      if population.contains_key(&applicant.to_text()) {
@@ -263,24 +301,33 @@ fn genesis_code() -> String{
              let life = new_life().await.unwrap();
              increase_population(applicant, life);
              codes.insert(code.clone(), (inviter, Some(life.to_text())));
-             // let nftid = storage::get::<VisaNFTCanisterId>();
-             // mint_nft_call(nftid, egg);
-             // update_inviter_call(life);
-             // update_owner_call(life);
-             // send_visa_nft_call(life);
-             return Some(life.clone())
-         }
+             let res = Principal::from_text(storage::get::<NFTCanisterId>());
+             match res {
+                 Err(e) => ic_cdk::trap(e.to_string().as_str()),
+                 Ok(nft_canister) => {
+                    let result = mint_citizen_nft(&nft_canister, life).await;
+                    match result {
+                        Err(e) => ic_cdk::trap(e.as_str()),
+                        Ok(citizen_id) => return Some(life.clone())
+                    }
+                }
+            }
+        }
          Some(_) => ic_cdk::trap(fail_msg)
      }
  }
  
  #[update(name = "DeployNFTContract")]
  #[candid_method(update, rename = "DeployNFTContract")]
- async fn deploy_nft_contract(wtype: WasmType) -> Principal{
+ async fn deploy_nft_contract(wtype: WasmType) -> String{
      _only_owner();
  
      match new_nft_contract(wtype).await {
-         Ok(n) => n,
+         Ok(n) => {
+            let nft_canister = storage::get_mut::<NFTCanisterId>();
+            nft_canister.clone_from(&n);
+            n
+         }
          Err(e) => ic_cdk::api::trap(e.as_str())
      }
  }
@@ -356,9 +403,9 @@ fn genesis_code() -> String{
      unsafe { FEE_TOKEN_ID = token_id };
  }
  
- #[update(name = "uploadTokenWasm")]
- #[candid_method(update, rename = "uploadTokenWasm")]
- fn upload_token_wasm(args: TokenStoreWASMArgs) {
+ #[update(name = "uploadWasm")]
+ #[candid_method(update, rename = "uploadWasm")]
+ fn upload_wasm(args: StoreWASMArgs) {
      _must_initialized();
      _only_owner();
  

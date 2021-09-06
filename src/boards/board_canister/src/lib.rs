@@ -6,9 +6,10 @@ use ic_cdk::storage;
 use ic_cdk::api::caller;
 use board::Board;
 use inter_call::{mint_visa_nft_call, send_nft_call, listen_to};
-use crate::inter_call::types::NftEgg;
+use nft::{NFTPayload, NftEgg, Property, Value};
 use visa::{Ticket, Visa};
 use room::Room;
+use workshop::Workshop;
 
 static mut PAB_TOKEN_CANISTER: Principal = Principal::anonymous();
 static mut PAB_NFT_CANISTER: Principal = Principal::anonymous();
@@ -62,13 +63,26 @@ fn request_invite_code() {
 fn request_board_visa() {
     _only_chairman();
 
-    let args = NftEgg::default();
+    let args = NftEgg{ 
+        payload: NFTPayload{
+            payload: 0,
+            staged_data: vec![],
+        }, 
+        content_type: Default::default(), 
+        owner: Principal::anonymous(), 
+        properties: Property{
+            name: Default::default(),
+            value: Value::Empty,
+            immutable: false,
+        }, 
+        is_private: false 
+    };
     unsafe { mint_visa_nft_call(PAB_NFT_CANISTER, args); }
 }
 
 fn open_event(){
     if get().in_population(&caller().to_text()) {
-        let event = event::Event::default(&caller().to_text());
+        let event = event::Event::default();
         let board = storage::get_mut::<Board>();
         board.add_event(event)
     }
@@ -76,21 +90,21 @@ fn open_event(){
 
 fn open_workshop(){
     if get().in_population(&caller().to_text()) {
-        let workshop = workshop::Workshop::default(&caller().to_text());
+        let workshop = Workshop::default();
         let board = storage::get_mut::<Board>();
         board.add_workshop(workshop)
     }
 }
 fn open_room(){
     if get().in_population(&caller().to_text()) {
-        let room = room::Room::default(&caller().to_text());
+        let room = room::Room::default();
         let board = storage::get_mut::<Board>();
         board.add_room(room)
     }
 }
 fn find_room(room_id: String) -> Option<Room> {
     let b = storage::get::<Board>();
-    for i in b.rooms.len() {
+    for i in 0..b.rooms.len() {
         let room: Option<&Room> = b.rooms.get(i);
         match room {
             Some(r) => if r.id == room_id { Some(r) }

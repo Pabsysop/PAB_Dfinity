@@ -1,25 +1,11 @@
-use crate::Scene;
-use url::Url;
+use candid::{CandidType};
+use serde::{Serialize, Deserialize};
 
+#[derive(Debug, Deserialize, Serialize, CandidType)]
 pub struct CommonScene {
     pub title: String,
-    pub cover: Url
+    pub cover: String
 }
 
-impl Scene for CommonScene {
-    fn default(_owner: &str) {
-        todo!()
-    }
-
-    fn open(&self) -> Self {
-        todo!()
-    }
-
-    fn name(&self) -> &'static str {
-        todo!()
-    }
-
-    fn get_event_cover(&self) -> String {
-        todo!()
-    }
+impl CommonScene {
 }

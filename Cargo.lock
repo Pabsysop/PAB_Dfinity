@@ -191,6 +191,7 @@ dependencies = [
 name = "board"
 version = "0.1.0"
 dependencies = [
+ "candid",
  "consensus",
  "event",
  "ic-cdk",
@@ -199,7 +200,10 @@ dependencies = [
  "market",
  "room",
  "scene",
- "url",
+ "serde",
+ "serde_bytes",
+ "serde_cbor",
+ "serde_with",
  "visa",
  "workshop",
 ]
@@ -236,12 +240,6 @@ name = "build_const"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b4ae4235e6dac0694637c763029ecea1a2ec9e4e06ec2729bd21ba4d9c863eb7"
-
-[[package]]
-name = "bumpalo"
-version = "3.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c59e7af012c713f529e7a3ee57ce9b31ddd858d4b512923602f74608b009631"
 
 [[package]]
 name = "byte-tools"
@@ -320,7 +318,11 @@ dependencies = [
 name = "consensus"
 version = "0.1.0"
 dependencies = [
- "getrandom 0.2.3",
+ "candid",
+ "ic-cdk",
+ "ic-cdk-macros",
+ "ic-types 0.2.2",
+ "serde",
 ]
 
 [[package]]
@@ -505,12 +507,13 @@ dependencies = [
 name = "event"
 version = "0.1.0"
 dependencies = [
+ "candid",
  "consensus",
  "ic-cdk",
  "ic-cdk-macros",
+ "ic-types 0.2.2",
  "market",
- "url",
- "uuid",
+ "serde",
  "visa",
  "workshop",
 ]
@@ -580,10 +583,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7fcd999463524c52659517fe2cea98493cfe485d10565e7b0fb07dbba7ad2753"
 dependencies = [
  "cfg-if 1.0.0",
- "js-sys",
  "libc",
  "wasi 0.10.0+wasi-snapshot-preview1",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -740,15 +741,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "js-sys"
-version = "0.3.53"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e4bf49d50e2961077d9c99f4b7997d770a1114f087c3c2e0069b36c13fc2979d"
-dependencies = [
- "wasm-bindgen",
-]
-
-[[package]]
 name = "keccak"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -888,6 +880,13 @@ dependencies = [
 [[package]]
 name = "market"
 version = "0.1.0"
+dependencies = [
+ "candid",
+ "ic-cdk",
+ "ic-cdk-macros",
+ "ic-types 0.2.2",
+ "serde",
+]
 
 [[package]]
 name = "matches"
@@ -1195,13 +1194,15 @@ checksum = "f497285884f3fcff424ffc933e56d7cbca511def0c9831a7f9b5f6153e3cc89b"
 name = "room"
 version = "0.1.0"
 dependencies = [
+ "candid",
  "consensus",
  "event",
  "ic-cdk",
  "ic-cdk-macros",
+ "ic-types 0.2.2",
  "market",
  "scene",
- "uuid",
+ "serde",
  "visa",
  "workshop",
 ]
@@ -1216,7 +1217,11 @@ checksum = "61b3909d758bb75c79f23d4736fac9433868679d3ad2ea7a61e3c25cfda9a088"
 name = "scene"
 version = "0.1.0"
 dependencies = [
- "url",
+ "candid",
+ "ic-cdk",
+ "ic-cdk-macros",
+ "ic-types 0.2.2",
+ "serde",
 ]
 
 [[package]]
@@ -1511,16 +1516,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b4ae116fef2b7fea257ed6440d3cfcff7f190865f170cdad00bb6465bf18ecba"
 
 [[package]]
-name = "uuid"
-version = "0.8.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc5cf98d8186244414c848017f0e2676b3fcb46807f6668a97dfe67359a3c4b7"
-dependencies = [
- "getrandom 0.2.3",
- "serde",
-]
-
-[[package]]
 name = "version_check"
 version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1560,60 +1555,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1a143597ca7c7793eff794def352d41792a93c481eb1042423ff7ff72ba2c31f"
 
 [[package]]
-name = "wasm-bindgen"
-version = "0.2.76"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ce9b1b516211d33767048e5d47fa2a381ed8b76fc48d2ce4aa39877f9f183e0"
-dependencies = [
- "cfg-if 1.0.0",
- "wasm-bindgen-macro",
-]
-
-[[package]]
-name = "wasm-bindgen-backend"
-version = "0.2.76"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cfe8dc78e2326ba5f845f4b5bf548401604fa20b1dd1d365fb73b6c1d6364041"
-dependencies = [
- "bumpalo",
- "lazy_static",
- "log",
- "proc-macro2",
- "quote",
- "syn",
- "wasm-bindgen-shared",
-]
-
-[[package]]
-name = "wasm-bindgen-macro"
-version = "0.2.76"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44468aa53335841d9d6b6c023eaab07c0cd4bddbcfdee3e2bb1e8d2cb8069fef"
-dependencies = [
- "quote",
- "wasm-bindgen-macro-support",
-]
-
-[[package]]
-name = "wasm-bindgen-macro-support"
-version = "0.2.76"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0195807922713af1e67dc66132c7328206ed9766af3858164fb583eedc25fbad"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
- "wasm-bindgen-backend",
- "wasm-bindgen-shared",
-]
-
-[[package]]
-name = "wasm-bindgen-shared"
-version = "0.2.76"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "acdb075a845574a1fa5f09fd77e43f7747599301ea3417a9fbffdeedfc1f4a29"
-
-[[package]]
 name = "winapi"
 version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1648,12 +1589,12 @@ checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 name = "workshop"
 version = "0.1.0"
 dependencies = [
+ "candid",
  "consensus",
  "ic-cdk",
  "ic-cdk-macros",
  "market",
  "scene",
- "url",
- "uuid",
+ "serde",
  "visa",
 ]
