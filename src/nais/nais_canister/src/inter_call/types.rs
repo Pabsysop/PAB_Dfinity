@@ -54,7 +54,7 @@ pub type IssueResult = CreateResult;
 
 #[derive(CandidType, Clone, Deserialize)]
 pub enum WasmType {
-    PAB,
+    PABToken,
     Board,
     Life,
     AvatarNFT,

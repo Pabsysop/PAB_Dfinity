@@ -1,4 +1,5 @@
 use assets::Assets;
+use ic_types::PrincipalError;
 use record::Record;
 use Ontology::Ontology;
 use std::collections::HashMap;
@@ -50,10 +51,10 @@ impl Default for Human {
 }
 
 impl Human {
-    pub fn born(&mut self, ident: String, lifeno: u64) -> Result<(), String> {
+    pub fn born(&mut self, ident: String, lifeno: u64) -> Result<(), PrincipalError> {
         let b = Principal::from_str(ident.as_str());
         match b {
-            Err(_) => Err(String::from("wrong identity")),
+            Err(e) => Err(e),
             Ok(id) => {
                 self.body = id;
                 self.ontology = Ontology::born(lifeno);

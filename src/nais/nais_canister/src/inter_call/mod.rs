@@ -59,31 +59,31 @@ pub async fn stop_call(args: StartStopArgs) -> Result<(), String> {
     Ok(())
 }
 
+#[derive(CandidType, Deserialize)]
+enum InstallMode {
+    #[serde(rename = "install")]
+    Install,
+    #[serde(rename = "reinstall")]
+    Reinstall,
+    #[serde(rename = "upgrade")]
+    Upgrade,
+}
+
+#[derive(CandidType, Deserialize)]
+struct CanisterInstall {
+    mode: InstallMode,
+    canister_id: Principal,
+    #[serde(with = "serde_bytes")]
+    wasm_module: Vec<u8>,
+    #[serde(with = "serde_bytes")]
+    arg: Vec<u8>,
+}
+
 pub async fn install_canister(
     canister_id: &Principal,
     wasm_module: Vec<u8>,
     args: Vec<u8>,
 ) -> Result<(), String> {
-    // Install Wasm
-    #[derive(CandidType, Deserialize)]
-    enum InstallMode {
-        #[serde(rename = "install")]
-        Install,
-        #[serde(rename = "reinstall")]
-        Reinstall,
-        #[serde(rename = "upgrade")]
-        Upgrade,
-    }
-
-    #[derive(CandidType, Deserialize)]
-    struct CanisterInstall {
-        mode: InstallMode,
-        canister_id: Principal,
-        #[serde(with = "serde_bytes")]
-        wasm_module: Vec<u8>,
-        #[serde(with = "serde_bytes")]
-        arg: Vec<u8>,
-    }
 
     let install_config = CanisterInstall {
         mode: InstallMode::Install,
@@ -102,6 +102,30 @@ pub async fn install_canister(
         Err((code, msg)) => {
             return Err(format!(
                 "An error happened during install_code call: {}: {}",
+                code as u8, msg
+            ))
+        }
+    };
+    Ok(())
+}
+
+pub async fn init_nft_canister(
+    canister_id: &Principal,
+    owner: &Principal,
+) -> Result<(), String> {
+
+    let meta = NFTContractMeta{name:"PAB Visa NFT".to_string(), symbol: "PVN".to_string()};
+    
+    match api::call::call(
+        canister_id.clone(),
+        "init",
+        ( vec![owner.clone()], meta, ),
+    ).await
+    {
+        Ok(x) => x,
+        Err((code, msg)) => {
+            return Err(format!(
+                "An error happened during init call: {}: {}",
                 code as u8, msg
             ))
         }
