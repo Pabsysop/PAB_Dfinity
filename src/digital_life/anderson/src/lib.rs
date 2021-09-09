@@ -78,7 +78,7 @@ fn _must_borned() {
 
 #[update(name = "Born")]
 #[candid_method(update, rename = "Born")]
-pub fn born(body: Principal) -> Result<String, ()>{
+pub fn born() -> Result<String, ()>{
     _only_owner();
 
     let me = storage::get_mut::<Human>();
@@ -88,7 +88,11 @@ pub fn born(body: Principal) -> Result<String, ()>{
         }
         BORN = true;
         BIRTHDAY = time();
-        me.born(caller().to_text(), LIFENO);
+        let isborn = me.born(caller().to_text(), LIFENO);
+        match isborn {
+            Err(e) => ic_cdk::trap(e.to_string().as_str()),
+            _ => ()
+        }
     }
 
     Ok(me.clone().ontology.name)

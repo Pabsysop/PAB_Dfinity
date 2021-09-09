@@ -12,7 +12,7 @@ type IssueTokenArgs = record {
 type Result = variant { Ok; Err };
 type Result_1 = variant { Ok : CreateResult; Err : text };
 type StoreWASMArgs = record { wasm_module : vec nat8; wasm_type : WasmType };
-type WasmType = variant { PAB; Life; AvatarNFT; Board; VisaNFT };
+type WasmType = variant { Life; AvatarNFT; Board; VisaNFT; PABToken };
 service : () -> {
   ApplyCitizenship : (text) -> (opt principal);
   BuildCivilization : () -> (opt principal);

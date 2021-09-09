@@ -23,7 +23,7 @@ service : (
   opt principal,
   opt principal,
 ) -> {
-  Born : (principal) -> (Result);
+  Born : () -> (Result);
   Die : () -> ();
   HowOldAreYou : () -> (nat64);
   Like : () -> ();
