@@ -1,19 +1,22 @@
+mod assets;
+
 use assets::Assets;
-use ic_types::PrincipalError;
-use record::Record;
 use Ontology::Ontology;
-use std::collections::HashMap;
-use std::str::FromStr;
 use serde::{Serialize, Deserialize};
 use candid::{CandidType, Principal};
+use ic_cdk::api::id;
+use nft::NFT;
 
-mod assets;
-mod record;
+#[derive(Clone, Debug, Deserialize, Serialize, CandidType)]
+pub struct Tag(Vec<NFT>);
 
-type Tag = ();
-type Personality = ();
-type Honor = ();
-type PhysicalBody = Principal;
+#[derive(Clone, Debug, Deserialize, Serialize, CandidType)]
+pub struct Honor(Vec<NFT>);
+
+#[derive(Clone, Debug, Deserialize, Serialize, CandidType)]
+pub struct Personality(Vec<NFT>);
+
+static COMMON_NAME: &str = "@pab#";
 
 #[derive(Clone, Debug, Deserialize, Serialize, CandidType)]
 pub enum Mood {
@@ -24,44 +27,85 @@ pub enum Mood {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, CandidType)]
+pub struct Connections {
+    pub followers: Vec<(Principal, u64)>,
+    pub followings: Vec<(Principal, u64)>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, CandidType)]
 pub struct Human {
-    pub body: PhysicalBody,
+    pub name: String,
     pub ontology: Ontology,
     pub mood: Mood,
-    pub tag: HashMap<String, Tag>,
-    pub personality: HashMap<String, Personality>,
-    pub honor: HashMap<String, Honor>,
-    pub assets: HashMap<String, Assets>,
-    pub record: HashMap<String, Record>,
+    pub tag: Option<Tag>,
+    pub personality: Option<Personality>,
+    pub honor: Option<Honor>,
+    pub assets: Vec<Assets>,
+    pub connections: Option<Connections>,
+    pub value: f64
 }
 
 impl Default for Human {
     fn default() -> Self {
         Self { 
-            body: Principal::anonymous(), 
+            name: Default::default(), 
             ontology: Default::default(), 
             mood: Mood::Clear,
-            tag: Default::default(), 
-            personality: Default::default(), 
-            honor: Default::default(), 
-            assets: Default::default(), 
-            record: Default::default() 
+            tag: None, 
+            personality: None, 
+            honor: None, 
+            assets: vec![],
+            connections: None,
+            value: 0.0, 
         }
     }
 }
 
 impl Human {
-    pub fn born(&mut self, ident: String, lifeno: u64) -> Result<(), PrincipalError> {
-        let b = Principal::from_str(ident.as_str());
-        match b {
-            Err(e) => Err(e),
-            Ok(id) => {
-                self.body = id;
-                self.ontology = Ontology::born(lifeno);
-                self.mood = Mood::Clear;
+    pub fn born(&mut self, lifeno: u64) {
+        self.name = COMMON_NAME.to_string() + "#" + lifeno.to_string().as_str();
+        self.ontology = Ontology::born(id().to_text());
+        self.mood = Mood::Clear;
 
-                Ok(())
+        self.ontology.set_gene(vec![0,0,1]);
+    }
+
+    pub fn set_name(&mut self, name: String) {
+        self.name = name;
+    }
+
+    pub fn add_following(&mut self, f: Principal){
+        let conns = self.connections.clone();
+        match conns {
+            Some(mut c) => {
+                c.followings.push((f, 0));
+                self.connections = Some(c);
+            }
+            None => {
+                let conns = Connections {
+                    followers: vec![],
+                    followings: vec![(f, 0)],
+                };
+                self.connections = Some(conns);
             }
         }
     }
+
+    pub fn add_followers(&mut self, f: Principal){
+        let conns = self.connections.clone();
+        match conns {
+            Some(mut c) => {
+                c.followers.push((f, 0));
+                self.connections = Some(c);
+            }
+            None => {
+                let conns = Connections {
+                    followers: vec![(f, 0)],
+                    followings: vec![],
+                };
+                self.connections = Some(conns);
+            }
+        }
+    }
+
 }

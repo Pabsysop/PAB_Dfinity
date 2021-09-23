@@ -1,23 +1,36 @@
-use candid::{CandidType, Nat, Principal};
+use candid::{CandidType, Principal};
 use serde::{Serialize, Deserialize};
 pub type TransactionId = u128;
 
 #[derive(Clone, Debug, Deserialize, Serialize, CandidType)]
 pub struct NFT {
-    pub title: String,
-    pub src: String,
-    pub chain: String,
-    pub price: f64,
-    pub unit: String,
+    pub id: String,
+    pub src: NFTSrc,
+}
+impl Default for NFT {
+    fn default() -> NFT{
+        NFT {
+            id: Default::default(),
+            src: NFTSrc::DFINITY,
+        }
+    }
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize, CandidType)]
+pub enum NFTSrc {
+    DFINITY,
+    LOCAL,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, CandidType)]
 pub enum NFTType {
     CITIZEN,
     TICKET,
     VISA,
     ASSETS,
 }
-#[derive(CandidType, Deserialize)]
+
+#[derive(CandidType, Deserialize, Serialize)]
 pub enum  Value {
     Int(i32),
     Nat(u32),
@@ -28,18 +41,18 @@ pub enum  Value {
     Empty
 }
 
-#[derive(CandidType, Deserialize)]
+#[derive(CandidType, Deserialize, Serialize)]
 pub struct  Property {
     pub name : String,
     pub value : Value,
     pub immutable : bool
 }
-#[derive(CandidType, Deserialize)]
+#[derive(CandidType, Deserialize, Serialize)]
 pub enum NFTPayload {
     Payload(Vec<u8>),
     StagedData
 }
-#[derive(CandidType, Deserialize)]
+#[derive(CandidType, Deserialize, Serialize)]
 pub struct NFTProperty {
     pub name: u8,
     pub value: (),
@@ -48,9 +61,11 @@ pub struct NFTProperty {
 #[derive(CandidType, Deserialize)]
 pub struct  NftEgg {
     pub payload: NFTPayload,
+    #[serde(rename = "contentType")]
     pub content_type: String,
     pub owner: Principal,
     pub properties: Vec<Property>,
+    #[serde(rename = "isPrivate")]
     pub is_private: bool
 }
 

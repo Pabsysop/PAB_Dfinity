@@ -2,9 +2,9 @@ all: board anderson nais
 .PHONY: all
 
 board:
-	cargo build --target wasm32-unknown-unknown --package board --release
+	cargo build --target wasm32-unknown-unknown --package board_canister --release
 
-	ic-cdk-optimizer ./target/wasm32-unknown-unknown/release/board.wasm -o ./target/wasm32-unknown-unknown/release/board_opt.wasm
+	ic-cdk-optimizer ./target/wasm32-unknown-unknown/release/board_canister.wasm -o ./target/wasm32-unknown-unknown/release/board_canister_opt.wasm
 
 anderson:
 	cargo build --target wasm32-unknown-unknown --package anderson --release

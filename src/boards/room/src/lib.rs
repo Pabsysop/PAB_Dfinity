@@ -2,36 +2,35 @@ mod group;
 mod message;
 mod voice;
 
-use std::vec;
-
+use std::{fmt::Debug, vec};
 use group::Group;
 use message::Message;
-use visa::Ticket;
 use candid::{CandidType, Principal};
 use serde::{Serialize, Deserialize};
+use visa::Ticket;
 
-const BASE_FEE: u32 = 1;
 static COMMON_TITLE: &str = "Anonymous Room";
 static COMMON_VIEW: &str = "https://partyboard.org/media/blog/blog_2.jpg";
-static DEPOSIT: i32 = 0;
 
 trait  Plugin<T> {
     fn did();
     fn disable(){}
 }
 
-#[derive(Debug, Deserialize, Serialize, CandidType)]
+#[derive(Debug, Deserialize, Serialize, CandidType, Clone)]
 pub struct Room {
     pub id: String,
     pub title: String,
     pub cover: String,
-    pub tickets: Vec<Ticket>,
     pub owner: Principal,
-    pub moderator: Vec<String>,
-    pub members: Vec<String>,
+    pub allows: Vec<Principal>,
+    pub tickets: Vec<Ticket>,
+    pub moderators: Vec<Principal>,
+    pub speakers: Vec<Principal>,
+    pub audiens: Vec<Principal>,
     pub groups: Vec<Group>,
-    pub channel: String,
     pub messages: Vec<Message>,
+    pub fee: f64
 }
 impl Default for Room {
     fn default() -> Room{
@@ -40,12 +39,14 @@ impl Default for Room {
             title: String::from(COMMON_TITLE),
             cover: String::from(COMMON_VIEW),
             owner: Principal::anonymous(),
-            members: vec![],
-            tickets: vec![],
-            moderator: vec![],
+            speakers: vec![],
+            audiens: vec![],
+            moderators: vec![],
             groups: vec![],
-            channel:  Default::default(),
-            messages: vec![]
+            messages: vec![],
+            tickets: vec![],
+            allows: Default::default(),
+            fee: 0.0
         }
     }
 
@@ -53,20 +54,17 @@ impl Default for Room {
 
 impl Room {
 
-    fn build(&mut self, title: String, cover: String, owner: Principal, id: String){
+    pub fn build(&mut self, title: String, cover: String, owner: Principal, id: String){
         self.title = title;
         self.cover = cover;
         self.owner = owner;
         self.id = id;
     }
 
-    pub fn add_member(&mut self, member_id: String){
-        self.members.push(member_id)
+    pub fn can_join(&self, person: &Principal, ticket: Option<Ticket>) -> bool {
+        self.allows.contains(person)
     }
-    pub fn can_start(&self, person: &String) -> bool{
-        self.moderator.iter().any(|e| e == person)
-    }
-    pub fn with_channel(&mut self){}
+    
     pub fn add_group(){}
     pub fn join_group(){}
     pub fn with_voice(&mut self){}

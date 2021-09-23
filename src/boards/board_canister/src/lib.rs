@@ -1,178 +1,234 @@
 mod inter_call;
+mod record;
 
-use candid::{CandidType, Principal, candid_method};
+use candid::{Principal, candid_method};
 use ic_cdk_macros::*;
-use ic_cdk::storage;
+use ic_cdk::{id, storage};
 use ic_cdk::api::caller;
+use candid::CandidType;
 use board::Board;
-use inter_call::{mint_visa_nft_call, send_nft_call, listen_to};
-use nft::{NFTPayload, NftEgg, Property, Value};
-use visa::{Ticket, Visa};
+use inter_call::{mint_visa_nft_call};
+use visa::{Ticket};
 use room::Room;
-use workshop::Workshop;
+use serde::{Deserialize};
+use record::Record;
 
-static mut PAB_TOKEN_CANISTER: Principal = Principal::anonymous();
-static mut PAB_NFT_CANISTER: Principal = Principal::anonymous();
+type LifeCanisterId = Principal;
+
+static mut NAIS: Principal = Principal::anonymous();
+static mut OWNER: Principal = Principal::anonymous();
+
+#[derive(Debug, Default, Deserialize, CandidType, Clone)]
+struct Committee {
+    pub chairman: Vec<LifeCanisterId>,
+    pub member: Vec<LifeCanisterId>
+}
+
+#[derive(Debug, Default)]
+pub struct Point(i32, i32, i32);
+
+#[derive(Debug, Default)]
+pub struct Population(Vec<Principal>);
+
+#[derive(Default, Debug)]
+struct BoardRooms(Vec<Room>);
+
+#[derive(Default, Debug)]
+struct Records(Vec<Record>);
+
+#[derive(Deserialize, CandidType)]
+struct UpgradePayload {
+    rooms: Vec<Room>,
+    records: Vec<Record>,
+    population: Vec<Principal>,
+    committee: Committee,
+    board: Board
+}
 
 fn get() -> &'static Board { storage::get::<Board>() }
 
+fn in_committee_chairman(person: &Principal) -> bool {
+    let committee = storage::get::<Committee>();
+    committee.chairman.contains(person)
+}
+
+fn in_committee(person: &Principal) -> bool {
+    let committee = storage::get::<Committee>();
+    committee.member.contains(person) || committee.chairman.contains(person)
+}
+
+fn in_population(person: &Principal) -> bool {
+    let population = storage::get::<Population>();
+    population.0.contains(person)
+}
+
+fn increase_population(person: Principal){
+    let population = storage::get_mut::<Population>();
+    population.0.push(person);
+}
+
 #[init]
 #[candid_method(init)]
-fn init(owner: Option<Principal>, pab: Option<Principal>, nft: Option<Principal>) {
+fn init(owner: Principal, chairman: Principal, nais: Principal) {
     unsafe {
-        match owner {
-            Some(o) => get().add_chairman(o),
-            _ => {}
-        }
-        match pab {
-            Some(o) => PAB_TOKEN_CANISTER =o,
-            _ => {}
-        }
-        match nft {
-            Some(o) => PAB_NFT_CANISTER =o,
-            _ => {}
-        }
+        OWNER = owner;
+        let committee = storage::get_mut::<Committee>();
+        committee.chairman.push(owner);
+        committee.chairman.push(chairman);
+        NAIS = nais;
+    }
+}
+
+fn _only_owner() {
+    unsafe {
+       if OWNER != caller() {
+           ic_cdk::trap("not owner");
+       }
     }
 }
 
 fn _only_chairman() {
-    unsafe {
-        assert!(get().in_committee_chairman(&caller().to_text()), "caller is not the owner");
+    if !in_committee_chairman(&caller()) {
+        ic_cdk::trap("not in committee");
     }
 }
 
-fn delegate_to(controller: Principal){
+#[update(name = "DelegateTo")]
+#[candid_method(update, rename = "DelegateTo")]
+fn delegate_to(moderator: Principal){
     _only_chairman();
 
-    let mut b = get();
-    b.add_chairman(controller);
+    let committee = storage::get_mut::<Committee>();
+    committee.chairman.push(moderator);
 }
 
-fn send_invite(code: String, to: Principal){
-    _only_chairman();
-
-    let mut b = get();
-    b.add_invites((to.to_text(), code))
+#[update(name = "GetBoardVisa")]
+#[candid_method(update, rename = "GetBoardVisa")]
+fn get_board_visa() {
+    unsafe { mint_visa_nft_call(NAIS, id()); }
 }
 
-fn request_invite_code() {
-    _only_chairman();
-
+#[derive(Deserialize, CandidType)]
+enum RoomTopic {
+    All,
 }
 
-fn request_board_visa() {
-    _only_chairman();
-
-    let args = NftEgg{ 
-        payload: NFTPayload{
-            payload: 0,
-            staged_data: vec![],
-        }, 
-        content_type: Default::default(), 
-        owner: Principal::anonymous(), 
-        properties: Property{
-            name: Default::default(),
-            value: Value::Empty,
-            immutable: false,
-        }, 
-        is_private: false 
-    };
-    unsafe { mint_visa_nft_call(PAB_NFT_CANISTER, args); }
-}
-
-fn open_event(){
-    if get().in_population(&caller().to_text()) {
-        let event = event::Event::default();
-        let board = storage::get_mut::<Board>();
-        board.add_event(event)
+#[query(name = "Talk")]
+#[candid_method(query, rename = "Talk")]
+fn talk(topic: RoomTopic) -> Vec<Room> {
+    match topic {
+        RoomTopic::All => {
+            let br = storage::get::<BoardRooms>();
+            br.0.clone()
+        }
     }
 }
 
-fn open_workshop(){
-    if get().in_population(&caller().to_text()) {
-        let workshop = Workshop::default();
-        let board = storage::get_mut::<Board>();
-        board.add_workshop(workshop)
-    }
+#[query(name = "Fee")]
+#[candid_method(query, rename = "Fee")]
+fn fee() -> f64 {
+    0.0
 }
+
+#[update(name = "Pay")]
+#[candid_method(update, rename = "Pay")]
+fn pay(amount: f64){
+
+}
+
+#[update(name = "Openroom")]
+#[candid_method(update, rename = "Openroom")]
 fn open_room(){
-    if get().in_population(&caller().to_text()) {
+    _only_chairman();
+
+    if in_population(&caller()) {
         let room = room::Room::default();
-        let board = storage::get_mut::<Board>();
-        board.add_room(room)
+        let br = storage::get_mut::<BoardRooms>();
+        br.0.push(room);
     }
 }
+
+#[query(name = "FindRoom")]
+#[candid_method(query, rename = "FindRoom")]
 fn find_room(room_id: String) -> Option<Room> {
-    let b = storage::get::<Board>();
-    for i in 0..b.rooms.len() {
-        let room: Option<&Room> = b.rooms.get(i);
+    let br = storage::get::<BoardRooms>();
+    for i in 0..br.0.len() {
+        let room = br.0.get(i);
         match room {
-            Some(r) => if r.id == room_id { Some(r) }
-            None => {None}
+            Some(r) =>  { 
+                if r.id == room_id { 
+                    return Some(r.clone())
+                } 
+            }
+            None => ()
         }
     }
     None
 }
+
+#[update(name = "JoinRoom")]
+#[candid_method(update, rename = "JoinRoom")]
 fn join_room(ticket: Option<Ticket>, room_id: String){
     let room = find_room(room_id);
     match room {
         Some(mut r) => {
-            match ticket {
-                Some(t) => {
-                    if r.tickets.iter().any(|e| e == t) {
-                        r.add_member(caller().to_text())
-                    }
-                }
-                None => {
-                    if r.tickets.is_empty() {
-                        r.add_member(caller().to_text())
-                    }
-                }
+            if r.can_join(&caller(), ticket) {
+                r.audiens.push(caller());
             }
         }
         None => {}
     }
 }
+
+#[update(name = "StartTalk")]
+#[candid_method(update, rename = "StartTalk")]
 fn start_talk(room_id: String){
-    let room = find_room(room_id);
-    match room {
-        Some(r) => {
-            if r.can_start(&caller().to_text()) {
-                for i in r.members.len() {
-                    match r.members.get(i) {
-                        Some(m) => { listen_to(Principal::from_text(m)?, r.channel.session.clone()) }
-                        _ => {}
-                    }
-                }
-            }
-        }
-        _ => {}
-    }
+    _only_owner();
+
 }
-fn fee() -> f64 {}
-fn pay(amount: f64){}
-fn like(){}
-fn relations(){}
+
+#[update(name = "Like")]
+#[candid_method(update, rename = "Like")]
+fn like(){
+
+}
+
+fn open_event(){
+    _only_owner();
+}
+
+fn open_workshop(){
+    _only_owner();
+}
 
 #[pre_upgrade]
 fn pre_upgrade() {
-    let board = get();
-    storage::stable_save((board,)).unwrap();
-    return;
+    let committee = storage::get_mut::<Committee>();
+    let popu = storage::get_mut::<Population>();
+    let records = storage::get_mut::<Records>();
+    let rooms = storage::get_mut::<BoardRooms>();
+    let board = storage::get_mut::<Board>();
+
+    let up = UpgradePayload {
+        rooms: rooms.0.clone(),
+        records: records.0.clone(),
+        population: popu.0.clone(),
+        committee: committee.clone(),
+        board: board.clone(),
+    };
+   
+    storage::stable_save((up, )).unwrap();
 }
 
 #[post_upgrade]
 fn post_upgrade() {
-    let board = storage::get_mut::<Board>();
+}
 
-    let res:Result<(Vec<Board>,), String> = storage::stable_restore();
-    match res {
-        Ok((old_posts,)) => {
-            for post in old_posts {
-                board.push(post);
-            }
-            return;
-        }
-        Err(_) => return
-    }
+#[cfg(any(target_arch = "wasm32", test))]
+fn main() {}
+
+#[cfg(not(any(target_arch = "wasm32", test)))]
+fn main() {
+    candid::export_service!();
+    std::print!("{}", __export_service());
 }

@@ -1,0 +1,42 @@
+type Group = record { group_members : vec text };
+type Message = record {
+  "text" : text;
+  user : text;
+  send_at : nat64;
+  expired_at : nat64;
+};
+type Room = record {
+  id : text;
+  fee : float64;
+  title : text;
+  tickets : vec Ticket;
+  groups : vec Group;
+  messages : vec Message;
+  owner : principal;
+  allows : vec principal;
+  cover : text;
+  audiens : vec principal;
+  speakers : vec principal;
+  moderators : vec principal;
+};
+type RoomTopic = variant { All };
+type Ticket = record {
+  id : text;
+  room : text;
+  used : bool;
+  nft_address : text;
+  expire_date : nat32;
+  issue_date : nat32;
+};
+service : (principal, principal, principal) -> {
+  DelegateTo : (principal) -> ();
+  Fee : () -> (float64) query;
+  FindRoom : (text) -> (opt Room) query;
+  GetBoardVisa : () -> ();
+  JoinRoom : (opt Ticket, text) -> ();
+  Like : () -> ();
+  Openroom : () -> ();
+  Pay : (float64) -> ();
+  StartTalk : (text) -> ();
+  Talk : (RoomTopic) -> (vec Room) query;
+}

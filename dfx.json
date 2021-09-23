@@ -9,7 +9,7 @@
     "board": {
       "build": "make board",
       "candid": "src/boards/board_canister/board.did",
-      "wasm": "target/wasm32-unknown-unknown/release/board_opt.wasm",
+      "wasm": "target/wasm32-unknown-unknown/release/board_canister_opt.wasm",
       "type": "custom"
     },
     "nais": {
