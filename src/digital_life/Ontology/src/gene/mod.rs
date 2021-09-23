@@ -3,7 +3,7 @@ use easy_hasher::easy_hasher::keccak256;
 pub fn generate_random_dna(_str: String) -> Vec<u32> {
     let dna_modulus: u32 = 3;
     let rand = keccak256(&_str);
-    let gene = rand.to_hex_string().parse::<u32>().unwrap() % dna_modulus;
+    let gene = rand.to_hex_string().parse::<u32>().unwrap_or(100) % dna_modulus;
 
     vec![gene]
 }
@@ -23,8 +23,6 @@ pub struct Details {
     skin_color_choice: u32,
     eye_color_choice: u32,
     clothes_color_choice: u32,
-    zombie_name: String,
-    zombie_description: String
 }
 
 pub fn build_from_gene(dna: String) -> Details{
@@ -41,8 +39,6 @@ pub fn build_from_gene(dna: String) -> Details{
         skin_color_choice: &dna_str[6..8].parse::<u32>().unwrap() / 100 * 360,
         eye_color_choice: &dna_str[8..10].parse::<u32>().unwrap() / 100 * 360,
         clothes_color_choice: &dna_str[10..12].parse::<u32>().unwrap() / 100 * 360,
-        zombie_name: String::from("name"),
-        zombie_description: String::from("desc"),
     };
 
     detail

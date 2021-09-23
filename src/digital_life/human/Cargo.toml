@@ -13,3 +13,4 @@ candid = "0.7.6"
 Ontology = { path = "../Ontology" }
 visa = { path = "../../boards/visa" }
 serde = "1.0.111"
+nft = { path = "../../nft" }

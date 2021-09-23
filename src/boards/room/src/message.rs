@@ -1,7 +1,7 @@
 use candid::{CandidType};
 use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Deserialize, Serialize, CandidType)]
+#[derive(Debug, Deserialize, Serialize, CandidType, Clone)]
 pub struct Message {
     pub user: String,
     pub text: String,

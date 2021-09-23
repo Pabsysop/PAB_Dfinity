@@ -13,12 +13,20 @@ pub struct NFTContractMeta {
 #[derive(CandidType, Clone, Deserialize)]
 pub struct Subaccount(pub [u8; 32]);
 
-pub struct WASMBytes(pub Option<serde_bytes::ByteBuf>);
-impl Default for WASMBytes {
-    fn default() -> Self {
-        WASMBytes(None)
-    }
-}
+#[derive(Default, Debug)]
+pub struct AvatarNFTWASMBytes(pub Option<serde_bytes::ByteBuf>);
+
+#[derive(Default, Debug)]
+pub struct VisaNFTWASMBytes(pub Option<serde_bytes::ByteBuf>);
+
+#[derive(Default, Debug)]
+pub struct LifeWASMBytes(pub Option<serde_bytes::ByteBuf>);
+
+#[derive(Default, Debug)]
+pub struct PABWalletWASMBytes(pub Option<serde_bytes::ByteBuf>);
+
+#[derive(Default, Debug)]
+pub struct BoardWASMBytes(pub Option<serde_bytes::ByteBuf>);
 
 #[derive(CandidType, Clone, Deserialize)]
 pub struct CanisterSettings {
@@ -66,6 +74,12 @@ pub struct StoreWASMArgs {
     pub wasm_type: WasmType,
     #[serde(with = "serde_bytes")]
     pub wasm_module: Vec<u8>,
+}
+
+#[derive(CandidType, Deserialize)]
+pub struct AvatarBytesArgs {
+    #[serde(with = "serde_bytes")]
+    pub image_bytes: Vec<u8>,
 }
 
 #[derive(CandidType, Deserialize)]

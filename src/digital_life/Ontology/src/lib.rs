@@ -1,41 +1,25 @@
-use candid::{CandidType, Principal};
-use ic_cdk::api::id;
 use serde::{Serialize, Deserialize};
+use candid::CandidType;
 
 mod profile;
 mod gene;
 mod view;
 
-static COMMON_NAME: &str = "@pab#";
-
-#[derive(Clone, Debug, Deserialize, Serialize, CandidType)]
+#[derive(Clone, Debug, Deserialize, Serialize, Default, CandidType)]
 pub struct Ontology {
-    pub name: String,
-    pub id: Principal,
+    pub id: String,
     pub gene: Vec<u32>,
 }
 
-impl Default for Ontology {
-    fn default() -> Self {
-        Self { 
-            name: Default::default(), 
-            id: Principal::anonymous(), 
-            gene: Default::default() 
-        }
-    }
-}
-
 impl Ontology {
-    pub fn set_name(&mut self, name: String) {
-        self.name = name;
-    }
-    pub fn born(sn: u64) -> Ontology {
-        let name = COMMON_NAME.to_string() + "#" + sn.to_string().as_str();
-        let id = id();
+    pub fn born(id: String) -> Ontology {
         Ontology {
-            name,
-            gene: gene::generate_random_dna(id.to_text()),
+            gene: gene::generate_random_dna(id.clone()),
             id
         }
+    }
+
+    pub fn set_gene(&mut self, v: Vec<u32>){
+        self.gene = v;
     }
 }

@@ -222,7 +222,6 @@ dependencies = [
  "ic-cdk-macros",
  "ic-types 0.2.2",
  "lazy_static",
- "libsecp256k1",
  "market",
  "nft",
  "room",
@@ -644,6 +643,7 @@ dependencies = [
  "ic-cdk",
  "ic-cdk-macros",
  "ic-types 0.2.2",
+ "nft",
  "serde",
  "visa",
 ]
@@ -1529,6 +1529,7 @@ dependencies = [
  "ic-cdk",
  "ic-cdk-macros",
  "ic-types 0.2.2",
+ "nft",
  "serde",
 ]
 

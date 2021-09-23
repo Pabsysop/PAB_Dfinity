@@ -34,31 +34,6 @@ pub async fn create_canister_call(args: CreateCanisterArgs) -> Result<CreateResu
     Ok(create_result)
 }
 
-pub async fn start_call(args: StartStopArgs) -> Result<(), String> {
-    match api::call::call(Principal::management_canister(), "start_canister", (args,)).await {
-        Ok(x) => x,
-        Err((code, msg)) => {
-            return Err(format!(
-                "An error happened during the call: {}: {}",
-                code as u8, msg
-            ))
-        }
-    };
-    Ok(())
-}
-pub async fn stop_call(args: StartStopArgs) -> Result<(), String> {
-    match api::call::call(Principal::management_canister(), "stop_canister", (args,)).await {
-        Ok(x) => x,
-        Err((code, msg)) => {
-            return Err(format!(
-                "An error happened during the call: {}: {}",
-                code as u8, msg
-            ))
-        }
-    };
-    Ok(())
-}
-
 #[derive(CandidType, Deserialize)]
 enum InstallMode {
     #[serde(rename = "install")]
@@ -112,9 +87,11 @@ pub async fn install_canister(
 pub async fn init_nft_canister(
     canister_id: &Principal,
     owner: &Principal,
+    name: String,
+    symbol: String
 ) -> Result<(), String> {
 
-    let meta = NFTContractMeta{name:"PAB Visa NFT".to_string(), symbol: "PVN".to_string()};
+    let meta = NFTContractMeta{name, symbol};
     
     match api::call::call(
         canister_id.clone(),
@@ -146,15 +123,15 @@ pub async fn init_nft_canister(
 //     Ok(())
 // }
 
-pub async fn mint_citizen_nft(nft_canister: &VisaNFTCanisterId, citizen: Principal) -> Result<String, String> {
+pub async fn mint_citizen_nft(nft_canister: &VisaNFTCanisterId, owner: Principal) -> Result<String, String> {
     let egg = NftEgg {
         payload: NFTPayload::Payload(vec![0x00]),
-        content_type: Default::default(),
-        owner: citizen,
+        content_type: "text".to_string(),
+        owner,
         properties: vec![Property{
             name : String::from("citizenship"),
             value : Value::Empty,
-            immutable : false
+            immutable : true
         }],
         is_private: true
     };
@@ -177,3 +154,77 @@ pub async fn mint_citizen_nft(nft_canister: &VisaNFTCanisterId, citizen: Princip
     Ok(nft_id)
 }
 
+pub async fn mint_avatar_nft(avatar_nft_canister: &Principal, owner: Principal, image_bytes: Vec<u8>) -> Result<String, String> {
+    let egg = NftEgg {
+        payload: NFTPayload::Payload(image_bytes),
+        content_type: "image".to_string(),
+        owner,
+        properties: vec![Property{
+            name : String::from("avatar"),
+            value : Value::Empty,
+            immutable : true
+        }],
+        is_private: true
+    };
+    
+    let (nft_id,): (String,) = match api::call::call(
+        avatar_nft_canister.clone(),
+        "mint", 
+        (egg,)
+    ).await 
+    {
+        Ok(x) => x,
+        Err((code, msg)) => {
+            return Err(format!(
+                "An error happened during the call: {}: {}",
+                code as u8, msg
+            ))
+        }
+    };
+
+    Ok(nft_id)
+}
+
+pub async fn life_be_born(life_canister: &Principal, citizen_nft_id: String) -> Result<String, String> {
+    let (name,): (String,) = match api::call::call(
+        life_canister.clone(),
+        "Born", 
+        (citizen_nft_id,)
+    ).await 
+    {
+        Ok(x) => x,
+        Err((code, msg)) => {
+            return Err(format!(
+                "An error happened during the call: {}: {}",
+                code as u8, msg
+            ))
+        }
+    };
+
+    Ok(name)
+}
+
+pub async fn start_call(args: StartStopArgs) -> Result<(), String> {
+    match api::call::call(Principal::management_canister(), "start_canister", (args,)).await {
+        Ok(x) => x,
+        Err((code, msg)) => {
+            return Err(format!(
+                "An error happened during the call: {}: {}",
+                code as u8, msg
+            ))
+        }
+    };
+    Ok(())
+}
+pub async fn stop_call(args: StartStopArgs) -> Result<(), String> {
+    match api::call::call(Principal::management_canister(), "stop_canister", (args,)).await {
+        Ok(x) => x,
+        Err((code, msg)) => {
+            return Err(format!(
+                "An error happened during the call: {}: {}",
+                code as u8, msg
+            ))
+        }
+    };
+    Ok(())
+}
