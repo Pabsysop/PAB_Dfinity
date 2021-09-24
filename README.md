@@ -2,28 +2,28 @@
 
 Here is a source tree for PAB smartcontract in dfinity
 <pre>
--root(include build and config files)<br />
-|___src<br />
-    |___boards (smartcontract for board package)<br />
-        |___board<br />
-        |___board_canister<br />
-        |___consensus<br />
-        |___event<br />
-        |___market<br />
-        |___room<br />
-        |___scene<br />
-        |___visa<br />
-        |___workshop<br />
-    |___digital_life (smartcontract for user package)<br />
-        |___anderson<br />
-        |___human<br />
-        |___Ontology<br />
-    |___nais (smartcontract for admin package)<br />
-        |___asset_canister<br />
-        |___nais_canister<br />
-    |___nft (smartcontract for nft market package)<br />
-    |___oracle (smartcontract for oracle market package)<br />
-    |___pab_frontend_assets (smartcontract for pab html page package)<br />
+-root(include build and config files)
+|___src
+    |___boards (smartcontract for board package)
+        |___board
+        |___board_canister
+        |___consensus
+        |___event
+        |___market
+        |___room
+        |___scene
+        |___visa
+        |___workshop
+    |___digital_life (smartcontract for user package)
+        |___anderson
+        |___human
+        |___Ontology
+    |___nais (smartcontract for admin package)
+        |___asset_canister
+        |___nais_canister
+    |___nft (smartcontract for nft market package)
+    |___oracle (smartcontract for oracle market package)
+    |___pab_frontend_assets (smartcontract for pab html page package)
 </pre>
 
 board also called cilivization is facility for pab metaverse, it is a playground for people living in PAB to 
