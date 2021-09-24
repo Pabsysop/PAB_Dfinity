@@ -13,14 +13,14 @@ Here is a source tree for PAB smartcontract in dfinity
         |___room
         |___scene
         |___visa
-        |___workshop
+        |___workshop<br />
     |___digital_life (smartcontract for user package)
         |___anderson
         |___human
-        |___Ontology
+        |___Ontology<br />
     |___nais (smartcontract for admin package)
         |___asset_canister
-        |___nais_canister
+        |___nais_canister<br />
     |___nft (smartcontract for nft market package)
     |___oracle (smartcontract for oracle market package)
     |___pab_frontend_assets (smartcontract for pab html page package)
