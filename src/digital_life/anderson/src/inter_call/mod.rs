@@ -53,3 +53,20 @@ pub async fn create_board_call(nais_canister: &Principal, chairman: Principal) -
 
     Some(board_can_id)
 }
+
+pub async fn open_room_call(board_canister: &Principal, title: String, cover: Option<String>) -> Option<String>{
+    let (room_id,): (String,) = match api::call::call(
+        board_canister.clone(),
+        "OpenRoom",
+        (title,cover,)
+    ).await 
+    {
+        Ok(x) => x,
+        Err((code, msg)) => {
+            println!("An error happened during the call: {}: {}", code as u8, msg);
+            return None;
+        }
+    };
+
+    Some(room_id)
+}

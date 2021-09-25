@@ -8,7 +8,7 @@ use candid::{CandidType, Principal, candid_method};
 use ic_cdk::api::{caller, time};
 use ic_cdk_macros::*;
 use human::{Human, Mood};
-use inter_call::{request_invite_code, create_board_call};
+use inter_call::{request_invite_code, create_board_call, open_room_call};
 use visa::{Ticket, Visa, VisaType};
 use nft::{NFT, NFTSrc, NFTType};
 use record::{Record, RecordType};
@@ -248,6 +248,24 @@ async fn create_board() -> Principal{
             None => ic_cdk::trap("create board error")
         }
     }
+}
+
+#[update(name = "CreateRoom")]
+#[candid_method(update, rename = "CreateRoom")]
+async fn create_room(title: String, cover: Option<String>){
+    let mb = storage::get_mut::<MyBoards>();
+    if mb.0.len() <= 0 {
+        unsafe {
+            let board_id = create_board_call(&NAIS, caller()).await;
+            match board_id {
+                Some(id) => mb.0.push(id),
+                None => ic_cdk::trap("create board error")
+            }
+        }
+    }
+    let room_id = open_room_call(
+        mb.0.get(0).unwrap(), title, cover
+    ).await;
 }
 
 #[update(name = "Invite")]
