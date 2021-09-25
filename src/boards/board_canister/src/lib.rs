@@ -136,16 +136,21 @@ fn pay(amount: f64){
 
 }
 
-#[update(name = "Openroom")]
-#[candid_method(update, rename = "Openroom")]
-fn open_room(){
+#[update(name = "OpenRoom")]
+#[candid_method(update, rename = "OpenRoom")]
+fn open_room(title: String, cover: Option<String>) -> String{
     _only_chairman();
+    let br = storage::get_mut::<BoardRooms>();
 
+    let id = (br.0.len() + 1).to_string();
     if in_population(&caller()) {
-        let room = room::Room::default();
-        let br = storage::get_mut::<BoardRooms>();
+        let room = room::Room::build(id.clone(), title, cover, caller());
         br.0.push(room);
+    }else{
+        ic_cdk::trap("open room failure");
     }
+
+    id
 }
 
 #[query(name = "FindRoom")]

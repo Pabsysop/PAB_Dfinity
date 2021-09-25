@@ -32,6 +32,7 @@ pub struct Room {
     pub messages: Vec<Message>,
     pub fee: f64
 }
+
 impl Default for Room {
     fn default() -> Room{
         Room {
@@ -54,11 +55,21 @@ impl Default for Room {
 
 impl Room {
 
-    pub fn build(&mut self, title: String, cover: String, owner: Principal, id: String){
-        self.title = title;
-        self.cover = cover;
-        self.owner = owner;
-        self.id = id;
+    pub fn build(id: String, title: String, cover: Option<String>, owner: Principal) -> Room{
+        Room {
+            id,
+            title,
+            cover:  cover.unwrap_or(String::from(COMMON_VIEW)),
+            owner,
+            speakers: vec![owner],
+            audiens: vec![],
+            moderators: vec![owner],
+            groups: vec![],
+            messages: vec![],
+            tickets: vec![],
+            allows: vec![owner],
+            fee: 0.0
+        }
     }
 
     pub fn can_join(&self, person: &Principal, ticket: Option<Ticket>) -> bool {
