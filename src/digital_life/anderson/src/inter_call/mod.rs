@@ -1,10 +1,29 @@
 use candid::Principal;
 use ic_cdk::api;
 
-pub async fn listen(board_canister: &Principal, room_id: String) -> Result<String, String> {
+pub async fn listen(board_canister: &Principal, room_id: String, ticket: Option<String>) -> Result<String, String> {
     let (session,): (String,) = match api::call::call(
         board_canister.clone(),
-        "Join", 
+        "JoinRoom", 
+        (ticket, room_id,)
+    ).await 
+    {
+        Ok(x) => x,
+        Err((code, msg)) => {
+            return Err(format!(
+                "An error happened during the call: {}: {}",
+                code as u8, msg
+            ))
+        }
+    };
+
+    Ok(session)
+}
+
+pub async fn speak(board_canister: &Principal, room_id: String) -> Result<String, String> {
+    let (session,): (String,) = match api::call::call(
+        board_canister.clone(),
+        "Speak", 
         (room_id,)
     ).await 
     {

@@ -112,17 +112,6 @@ module {
     email: Text;
   };
 
-  public type BoardAuth = {
-  }
-  public type BoardSponsor = {
-  }
-  public type BoardContent = {
-  }
-  public type BoardMember = {
-  }
-  public type BoardScene = {
-  }
-
   // support for Hashing
   public module CallerId = {
      public func eq(id1 : Principal, id2 : Principal) : Bool { id1 == id2 };

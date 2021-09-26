@@ -302,7 +302,18 @@ fn talk(topic: TalkTopic) -> Vec<Principal> {
 #[candid_method(update, rename = "Listen")]
 pub async fn listen(board: Principal, room: String) -> String{
     _only_owner();
-    let res = inter_call::listen(&board, room).await;
+    let res = inter_call::listen(&board, room, None).await;
+    match res {
+        Ok(session) => session,
+        Err(e) => ic_cdk::trap(e.as_str())
+    }
+}
+
+#[update(name = "Speak")]
+#[candid_method(update, rename = "Speak")]
+pub async fn speak(board: Principal, room: String) -> String{
+    _only_owner();
+    let res = inter_call::speak(&board, room).await;
     match res {
         Ok(session) => session,
         Err(e) => ic_cdk::trap(e.as_str())
