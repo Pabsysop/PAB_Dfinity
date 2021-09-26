@@ -45,7 +45,7 @@ build, install and test nais canister locally <br/>
 <code>dfx canister --no-wallet install nais --mode="install"</code><br />
 <code>dfx canister --no-wallet call --query nais "Hi" "()"</code><br />
 
-build anderson canister locally <br/>
+<br />build anderson canister locally <br/>
 <code>dfx build anderson</code>
 
 build board canister locally <br/>
