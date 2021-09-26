@@ -41,9 +41,9 @@ pad_frontend_assets is a framework to connects to some device like screen, VR ga
 
 <h2>Build</h2>
 build, install and test nais canister locally <br/>
-<code>dfx build nais</code>
-<code>dfx canister --no-wallet install nais --mode="install"</code>
-<code>dfx canister --no-wallet call --query nais "Hi" "()"</code>
+<code>dfx build nais</code><br />
+<code>dfx canister --no-wallet install nais --mode="install"</code><br />
+<code>dfx canister --no-wallet call --query nais "Hi" "()"</code><br />
 
 build anderson canister locally <br/>
 <code>dfx build anderson</code>
