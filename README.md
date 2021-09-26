@@ -38,3 +38,15 @@ nft is an Carrier for assets of digital life, making assets is real assets of th
 oracle is bridge for digital life communicating with outside world.
 
 pad_frontend_assets is a framework to connects to some device like screen, VR galsses, AR device, later to make digital life more fantasitic.
+
+<h2>Build</h2>
+build, install and test nais canister locally <br/>
+<code>dfx build nais</code>
+<code>dfx canister --no-wallet install nais --mode="install"</code>
+<code>dfx canister --no-wallet call --query nais "Hi" "()"</code>
+
+build anderson canister locally <br/>
+<code>dfx build anderson</code>
+
+build board canister locally <br/>
+<code>dfx build board</code>

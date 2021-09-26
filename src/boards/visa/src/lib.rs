@@ -32,6 +32,8 @@ impl Default for Visa {
 pub struct Ticket {
     pub id: String,
     pub room: String,
+    pub channle: String,
+    pub token: String,
     pub expire_date: u32,
     pub issue_date: u32,
     pub used: bool,
@@ -42,6 +44,8 @@ impl Default for Ticket {
         Ticket {
             id: Default::default(),
             room: Default::default(),
+            channle: Default::default(),
+            token: Default::default(),
             expire_date: 0,
             issue_date: 0,
             nft_address: Default::default(),

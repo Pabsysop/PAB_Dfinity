@@ -72,10 +72,14 @@ impl Room {
         }
     }
 
-    pub fn can_join(&self, person: &Principal, ticket: Option<Ticket>) -> bool {
+    pub fn can_join(&self, person: &Principal, ticket: Option<String>) -> bool {
         self.allows.contains(person)
     }
     
+    pub fn can_speak(&self, person: &Principal) -> bool {
+        self.allows.contains(person)
+    }
+
     pub fn add_group(){}
     pub fn join_group(){}
     pub fn with_voice(&mut self){}

@@ -173,7 +173,7 @@ fn find_room(room_id: String) -> Option<Room> {
 
 #[update(name = "JoinRoom")]
 #[candid_method(update, rename = "JoinRoom")]
-fn join_room(ticket: Option<Ticket>, room_id: String){
+fn join_room(ticket: Option<String>, room_id: String){
     let room = find_room(room_id);
     match room {
         Some(mut r) => {
@@ -185,11 +185,18 @@ fn join_room(ticket: Option<Ticket>, room_id: String){
     }
 }
 
-#[update(name = "StartTalk")]
-#[candid_method(update, rename = "StartTalk")]
-fn start_talk(room_id: String){
-    _only_owner();
-
+#[update(name = "Speak")]
+#[candid_method(update, rename = "Speak")]
+fn speak(room_id: String){
+    let room = find_room(room_id);
+    match room {
+        Some(mut r) => {
+            if r.can_speak(&caller()) {
+                r.speakers.push(caller());
+            }
+        }
+        None => {}
+    }
 }
 
 #[update(name = "Like")]
