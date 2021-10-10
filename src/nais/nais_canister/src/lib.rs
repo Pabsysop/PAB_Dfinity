@@ -100,10 +100,18 @@
      civils.push(board);
  }
  
- fn _must_living_citizen(applicant: Principal) {
+ fn _must_living_citizen(applicant: Principal, life: Option<LifeCanisterId>) {
     let population = storage::get::<Living>();
     if !population.contains_key(&applicant.to_text()) {
         ic_cdk::trap("not living in this metaverse");
+    }        
+    match life {
+        None => (),
+        Some(life_v) => {
+            if life_v != population.get(&applicant.to_text()).unwrap().to_owned() {
+                ic_cdk::trap("wrong wallet and life pair");
+            }
+        }
     }
 }
  
@@ -199,8 +207,8 @@
 }
 async fn new_nft_contract(wtype: WasmType) -> Result<String, String> {
      let nft_bytes: Option<serde_bytes::ByteBuf>;
-     let mut name = String::from("PAB NFT");
-     let mut symbol = String::from("PVN");
+     let name;
+     let symbol;
      match wtype {
          WasmType::VisaNFT => {
              nft_bytes = storage::get::<VisaNFTWASMBytes>().0.clone();
@@ -484,19 +492,18 @@ pub async fn apply_citizenship(code: String) -> Option<LifeCanisterId> {
 
  #[update(name = "BuildCivilization")]
  #[candid_method(update, rename = "BuildCivilization")]
- async fn build_civilization(chairman: Principal) -> Option<BoardCanisterId> {
+ async fn build_civilization(chairman: Principal) -> BoardCanisterId {
      _must_initialized();
-     _must_living_citizen(caller());
+     _must_living_citizen(chairman, Some(caller()));
  
      let board = new_board(caller(), chairman).await;
      match board {
          Ok(board_canister_id) => {
             increase_civilization(board_canister_id);
-            Some(board_canister_id)
+            board_canister_id
          }
          Err(e) => ic_cdk::trap(e.as_str())
      }
-
  }
  
  #[update(name = "WakeUp")]
@@ -571,7 +578,7 @@ pub async fn apply_citizenship(code: String) -> Option<LifeCanisterId> {
  #[update(name = "RequestAvatarNft")]
  #[candid_method(update, rename = "RequestAvatarNft")]
  async fn request_avatar_nft(args: AvatarBytesArgs) -> String {
-    _must_living_citizen(caller());
+    _must_living_citizen(caller(), None);
 
     let res = Principal::from_text(storage::get::<CanisterID>().avatar_nft_canister_id.to_string());
     let avatar_id = match res {

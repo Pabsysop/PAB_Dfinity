@@ -19,24 +19,25 @@ type Room = record {
   speakers : vec principal;
   moderators : vec principal;
 };
-type RoomTopic = variant { All };
 type Ticket = record {
   id : text;
+  token : text;
   room : text;
   used : bool;
   nft_address : text;
   expire_date : nat32;
   issue_date : nat32;
+  channle : text;
 };
 service : (principal, principal, principal) -> {
   DelegateTo : (principal) -> ();
   Fee : () -> (float64) query;
   FindRoom : (text) -> (opt Room) query;
   GetBoardVisa : () -> ();
-  JoinRoom : (opt Ticket, text) -> ();
+  Hi : () -> (vec text, vec Room) query;
+  JoinRoom : (opt text, text) -> ();
   Like : () -> ();
-  Openroom : () -> ();
+  OpenRoom : (text, opt text) -> (text);
   Pay : (float64) -> ();
-  StartTalk : (text) -> ();
-  Talk : (RoomTopic) -> (vec Room) query;
+  Speak : (text) -> ();
 }

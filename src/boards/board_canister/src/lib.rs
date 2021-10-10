@@ -110,18 +110,20 @@ fn get_board_visa() {
 
 #[derive(Deserialize, CandidType)]
 enum RoomTopic {
-    All,
+    Rooms,
 }
 
-#[query(name = "Talk")]
-#[candid_method(query, rename = "Talk")]
-fn talk(topic: RoomTopic) -> Vec<Room> {
-    match topic {
-        RoomTopic::All => {
+#[query(name = "Hi")]
+#[candid_method(query, rename = "Hi")]
+fn hi() -> (Vec<String>, Vec<Room>) {
+    // match topic {
+    //     RoomTopic::Rooms => {
+            let board = get();
+            let board_meta = vec![board.title.clone(), board.cover.clone(), board.about.clone()];
             let br = storage::get::<BoardRooms>();
-            br.0.clone()
-        }
-    }
+            (board_meta, br.0.clone())
+    //     }
+    // }
 }
 
 #[query(name = "Fee")]

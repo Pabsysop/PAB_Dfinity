@@ -10,6 +10,7 @@ pub struct Board {
     pub id: String,
     pub title: String,
     pub cover: String,
+    pub about: String,
     consensuses: Consensus,
 }
 
@@ -19,7 +20,8 @@ impl Default for Board {
             id: Default::default(),
             title: String::from(COMMON_TITLE),
             cover: String::from(COMMON_VIEW),
-            consensuses: Consensus::POW,
+            consensuses: Consensus::POA,
+            about: String::from(""),
         }
     }
 

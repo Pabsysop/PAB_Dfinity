@@ -17,6 +17,7 @@ type WasmType = variant { Life; AvatarNFT; Board; VisaNFT; PABToken };
 service : () -> {
   ApplyCitizenship : (text) -> (opt principal);
   BuildCivilization : (principal) -> (opt principal);
+  Citizens : () -> (text) query;
   DeployNFTContract : (WasmType) -> (text);
   DeployTokenContract : () -> (text);
   GenesisCode : () -> (text) query;

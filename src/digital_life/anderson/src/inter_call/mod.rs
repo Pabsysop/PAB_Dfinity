@@ -48,7 +48,7 @@ pub async fn request_invite_code(nais_canister: &Principal) -> Option<Vec<String
     {
         Ok(x) => x,
         Err((code, msg)) => {
-            println!("An error happened during the call: {}: {}", code as u8, msg);
+            ic_cdk::println!("An error happened during the call: {}: {}", code as u8, msg);
             return None;
         }
     };
@@ -65,7 +65,7 @@ pub async fn create_board_call(nais_canister: &Principal, chairman: Principal) -
     {
         Ok(x) => x,
         Err((code, msg)) => {
-            println!("An error happened during the call: {}: {}", code as u8, msg);
+            ic_cdk::println!("An error happened during the call: {}: {}", code as u8, msg);
             return None;
         }
     };
@@ -82,10 +82,25 @@ pub async fn open_room_call(board_canister: &Principal, title: String, cover: Op
     {
         Ok(x) => x,
         Err((code, msg)) => {
-            println!("An error happened during the call: {}: {}", code as u8, msg);
+            ic_cdk::println!("An error happened during the call: {}: {}", code as u8, msg);
             return None;
         }
     };
 
     Some(room_id)
+}
+
+pub async fn follow(life_canister: &Principal){
+    let (_ret,): ((),) = match api::call::call(
+        life_canister.clone(),
+        "FollowMe",
+        ()
+    ).await 
+    {
+        Ok(x) => x,
+        Err((code, msg)) => {
+            ic_cdk::println!("An error happened during the call: {}: {}", code as u8, msg);
+            ((),)
+        }
+    };
 }
