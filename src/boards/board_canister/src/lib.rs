@@ -8,6 +8,7 @@ use ic_cdk::api::caller;
 use candid::CandidType;
 use board::Board;
 use inter_call::{mint_visa_nft_call};
+use serde::__private::de::IdentifierDeserializer;
 use visa::{Ticket};
 use room::Room;
 use serde::{Deserialize};
@@ -77,6 +78,8 @@ fn init(owner: Principal, chairman: Principal, nais: Principal) {
         committee.chairman.push(chairman);
         NAIS = nais;
     }
+    increase_population(owner);
+    increase_population(chairman);
 }
 
 fn _only_owner() {
@@ -104,8 +107,13 @@ fn delegate_to(moderator: Principal){
 
 #[update(name = "GetBoardVisa")]
 #[candid_method(update, rename = "GetBoardVisa")]
-fn get_board_visa() {
-    unsafe { mint_visa_nft_call(NAIS, id()); }
+async fn get_board_visa() {
+    unsafe { 
+        match mint_visa_nft_call(NAIS, id()).await {
+            Ok(_) => (),
+            Err(e) => ic_cdk::trap(e.as_str())
+        }
+    }
 }
 
 #[derive(Deserialize, CandidType)]
@@ -147,12 +155,25 @@ fn open_room(title: String, cover: Option<String>) -> String{
     let id = (br.0.len() + 1).to_string();
     if in_population(&caller()) {
         let room = room::Room::build(id.clone(), title, cover, caller());
-        br.0.push(room);
+        br.0.push(room.clone());
+        ic_cdk::println!("open room {} for {} in {}", room.id, room.owner.to_owned(), ic_cdk::id());
     }else{
         ic_cdk::trap("open room failure");
     }
 
     id
+}
+
+#[update(name = "RefreshRoom")]
+#[candid_method(update, rename = "RefreshRoom")]
+fn refresh_room(token: String, room_id: String){
+    _only_chairman();
+
+    let room = find_room(room_id);
+    match room {
+        Some(mut r) => (r.token = token),       
+        None => ()
+    }
 }
 
 #[query(name = "FindRoom")]
@@ -175,15 +196,30 @@ fn find_room(room_id: String) -> Option<Room> {
 
 #[update(name = "JoinRoom")]
 #[candid_method(update, rename = "JoinRoom")]
-fn join_room(ticket: Option<String>, room_id: String){
+fn join_room(ticket: Option<String>, room_id: String) -> String{
     let room = find_room(room_id);
-    match room {
+    let token = match room {
         Some(mut r) => {
             if r.can_join(&caller(), ticket) {
                 r.audiens.push(caller());
             }
+            r.token
         }
-        None => {}
+        None => String::from("")
+    };
+
+    token
+}
+
+#[update(name = "LeaveRoom")]
+#[candid_method(update, rename = "LeaveRoom")]
+fn leave_room(room_id: String){
+    let room = find_room(room_id);
+    match room {
+        Some(mut r) => {
+            r.audiens.retain(|x| *x != caller());
+        }
+        None => ()
     }
 }
 

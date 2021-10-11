@@ -35,7 +35,7 @@ pub async fn create_canister_call(args: CreateCanisterArgs) -> Result<CreateResu
 }
 
 #[derive(CandidType, Deserialize)]
-enum InstallMode {
+pub enum InstallMode {
     #[serde(rename = "install")]
     Install,
     #[serde(rename = "reinstall")]
@@ -58,13 +58,14 @@ pub async fn install_canister(
     canister_id: &Principal,
     wasm_module: Vec<u8>,
     args: Vec<u8>,
+    mode: Option<InstallMode>
 ) -> Result<(), String> {
 
     let install_config = CanisterInstall {
-        mode: InstallMode::Install,
+        mode: mode.unwrap_or(InstallMode::Install),
         canister_id: canister_id.clone(),
         wasm_module: wasm_module.clone(),
-        arg: args,
+        arg: args.clone(),
     };
 
     match api::call::call(
@@ -125,15 +126,15 @@ pub async fn init_nft_canister(
 
 pub async fn mint_citizen_nft(nft_canister: &VisaNFTCanisterId, owner: Principal) -> Result<String, String> {
     let egg = NftEgg {
-        payload: NFTPayload::Payload(vec![0x00]),
-        content_type: "text".to_string(),
+        payload: NFTPayload::Payload(vec![]),
+        content_type: "plain".to_string(),
         owner,
         properties: vec![Property{
             name : String::from("citizenship"),
-            value : Value::Empty,
+            value : Value::Text(owner.to_text()),
             immutable : true
         }],
-        is_private: true
+        is_private: false
     };
     
     let (nft_id,): (String,) = match api::call::call(
@@ -160,11 +161,11 @@ pub async fn mint_avatar_nft(avatar_nft_canister: &Principal, owner: Principal, 
         content_type: "image".to_string(),
         owner,
         properties: vec![Property{
-            name : String::from("avatar"),
-            value : Value::Empty,
+            name : String::from("who"),
+            value : Value::Text(owner.to_text()),
             immutable : true
         }],
-        is_private: true
+        is_private: false
     };
     
     let (nft_id,): (String,) = match api::call::call(

@@ -23,6 +23,7 @@
  use inter_call::*;
  use inter_call::types::*;
  use serde::Deserialize;
+ use serde_bytes::ByteBuf;
  use easy_hasher::easy_hasher;
  
  static mut POPULATION_QUANTITIES: u64 = 0;
@@ -158,7 +159,7 @@
                     ))
                     .expect("Failed to encode arguments.");
                     match install_canister(&create_result.canister_id, o.clone().into_vec(),
-                                            install_args).await
+                                            install_args, None).await
                     {
                         Ok(_) => { Ok(create_result.canister_id) }
                         Err(e) => ic_cdk::trap(format!("new life mission failed due to : {}",e).as_str())
@@ -195,7 +196,7 @@
                     ))
                     .expect("Failed to encode arguments.");
                      match install_canister(&create_result.canister_id, o.clone().into_vec(),
-                                            install_args).await
+                                            install_args, None).await
                      {
                          Ok(_) => { Ok(create_result.canister_id) }
                          Err(e) => ic_cdk::trap(format!("new board mission failed due to : {}",e).as_str())
@@ -247,7 +248,7 @@ async fn new_nft_contract(wtype: WasmType) -> Result<String, String> {
                     )).unwrap_or(vec![]);
             
                     match install_canister(&create_result.canister_id, o.clone().into_vec(),
-                                        install_args).await
+                                        install_args, None).await
                     {
                         Ok(_) => {
                             init_nft_canister(&create_result.canister_id, &id(), name.to_string(), symbol.to_string()).await?;
@@ -287,7 +288,7 @@ async fn new_nft_contract(wtype: WasmType) -> Result<String, String> {
                    )).unwrap_or(vec![]);
            
                    match install_canister(&create_result.canister_id, o.clone().into_vec(),
-                                       install_args).await
+                                       install_args, None).await
                    {
                        Ok(_) => Ok(create_result.canister_id.to_string()),
                        Err(e) => ic_cdk::trap(format!("create token contract mission failed due to : {}",e).as_str())
@@ -387,6 +388,27 @@ pub fn hi() -> String{
         format!("Hi, {}; {}; {}; {}; {};", OWNER, POPULATION_QUANTITIES, canister.n_f_t_canister_id, 
                 canister.p_a_b_token_canister_id, canister.avatar_nft_canister_id)
     }
+}
+
+#[update(name = "UpgradeCanister")]
+#[candid_method(update, rename = "UpgradeCanister")]
+pub async fn upgrade_canister(canister: Principal, wasm_type: WasmType){
+    let o = match wasm_type {
+        WasmType::Board => storage::get::<BoardWASMBytes>().0.clone().unwrap_or(ByteBuf::new()),
+        WasmType::Life => storage::get::<LifeWASMBytes>().0.clone().unwrap_or(ByteBuf::new()),
+        WasmType::AvatarNFT => storage::get::<AvatarNFTWASMBytes>().0.clone().unwrap_or(ByteBuf::new()),
+        WasmType::VisaNFT => storage::get::<VisaNFTWASMBytes>().0.clone().unwrap_or(ByteBuf::new()),
+        WasmType::PABToken =>  storage::get::<PABWalletWASMBytes>().0.clone().unwrap_or(ByteBuf::new()),
+    };
+
+    let install_args = encode_args(()).expect("Failed to encode arguments.");
+     match install_canister(&canister, o.clone().into_vec(),
+                            install_args, Some(InstallMode::Upgrade)).await
+     {
+         Ok(_) => (),
+         Err(e) => ic_cdk::trap(format!("upgrade mission failed due to : {}",e).as_str())
+    }
+
 }
 
 #[update(name = "ApplyCitizenship")]
@@ -630,7 +652,7 @@ pub async fn apply_citizenship(code: String) -> Option<LifeCanisterId> {
      match install_canister(
          &create_result.canister_id,
          wasm_module.clone().into_vec(),
-         install_args,
+         install_args, None
      ).await
      {
          Ok(_) => {
@@ -710,12 +732,12 @@ fn pre_upgrade() {
         civils,
         initialized: init,
         owner,
-        pab_token: canister.n_f_t_canister_id.to_string(),
-        pab_nft: canister.p_a_b_token_canister_id.to_string(),
+        pab_nft: canister.n_f_t_canister_id.to_string(),
         pab_avatar_nft: canister.avatar_nft_canister_id.to_string(),
+        pab_token: canister.p_a_b_token_canister_id.to_string(),
         life_no: totals
     };
-   
+    
     storage::stable_save((up, )).unwrap();
 }
 

@@ -53,6 +53,7 @@ struct AvatarNFT(Vec<NFT>);
 struct UpgradePayload {
     totalincentives: u64,
     totallikes: u64,
+    nais: Principal,
     born: bool,
     birthday: u64,
     owner: Principal,
@@ -63,7 +64,8 @@ struct UpgradePayload {
     seed: String,
     nfts: Vec<NFT>,
     visas: Vec<(String,Option<Visa>)>,
-    tickets: Vec<Ticket>
+    tickets: Vec<Ticket>,
+    boards: Vec<Principal>,
 }
 
 #[derive(Deserialize, CandidType)]
@@ -266,12 +268,16 @@ fn sleep() {
 #[update(name = "Die")]
 #[candid_method(update, rename = "Die")]
 fn die(){
-    _only_owner();
+//    _only_owner();
+    let mb = storage::get_mut::<MyBoards>();
+    mb.0.clear();
 }
 
 #[update(name = "CreateBoard")]
 #[candid_method(update, rename = "CreateBoard")]
 async fn create_board() -> Principal{
+    _only_owner();
+
     unsafe {
         let board_id = create_board_call(&NAIS, caller()).await;
         match board_id {
@@ -288,6 +294,8 @@ async fn create_board() -> Principal{
 #[update(name = "CreateRoom")]
 #[candid_method(update, rename = "CreateRoom")]
 async fn create_room(title: String, cover: Option<String>){
+    _only_owner();
+
     let mb = storage::get_mut::<MyBoards>();
     if mb.0.len() <= 0 {
         unsafe {
@@ -305,7 +313,9 @@ async fn create_room(title: String, cover: Option<String>){
 
 #[query(name = "Follows")]
 #[candid_method(query, rename = "Follows")]
-fn follows(f: Principal) -> (Vec<(Principal, u64)>, Vec<(Principal, u64)>){
+fn follows() -> (Vec<(Principal, u64)>, Vec<(Principal, u64)>){
+    _only_owner();
+
     let mut followers: Vec<(Principal, u64)> = vec![];
     let mut followings: Vec<(Principal, u64)> = vec![];
     let me = storage::get::<Human>();
@@ -333,6 +343,8 @@ async fn follow(f: Principal) {
 #[update(name = "FollowMe")]
 #[candid_method(update, rename = "FollowMe")]
 fn follow_me() {
+    _not_owner();
+
     let me = storage::get_mut::<Human>();
     me.add_followers(caller());
 }
@@ -373,7 +385,10 @@ pub async fn speak(board: Principal, room: String) -> String{
 
 #[update(name = "See")]
 #[candid_method(update, rename = "See")]
-fn see(){}
+fn see(){
+    _only_owner();
+
+}
 
 #[update(name = "Like")]
 #[candid_method(update, rename = "Like")]
@@ -427,6 +442,7 @@ fn record(content: Vec<u8>){
 
 #[pre_upgrade]
 fn pre_upgrade() {
+    let nais = unsafe { NAIS };
     let totallikes = unsafe { TOTALLIKES };
     let totalincentives = unsafe { TOTALINCENTIVES };
     let born = unsafe { BORN };
@@ -451,8 +467,10 @@ fn pre_upgrade() {
     }
     let seed = storage::get::<Password>();
     let human = storage::get::<Human>();
+    let boards = storage::get::<MyBoards>();
 
     let up = UpgradePayload {
+        nais,
         totallikes,
         totalincentives,
         born,
@@ -466,6 +484,7 @@ fn pre_upgrade() {
         nfts,
         visas,
         tickets,
+        boards: boards.0.clone(),
     };
    
     storage::stable_save((up, )).unwrap();
@@ -482,6 +501,7 @@ fn post_upgrade() {
         LIFENO = down.life_no;
         TOTALINCENTIVES = down.totalincentives;
         TOTALLIKES = down.totallikes;
+        NAIS = down.nais;
     }
     let citi = storage::get_mut::<Citizenship>();
     citi.clone_from(&down.citizen);
@@ -495,6 +515,9 @@ fn post_upgrade() {
     }
     for v in down.tickets {
         storage::get_mut::<Tickets>().push(v);
+    }
+    for v in down.boards {
+        storage::get_mut::<MyBoards>().0.push(v);
     }
 
     let human = storage::get_mut::<Human>();

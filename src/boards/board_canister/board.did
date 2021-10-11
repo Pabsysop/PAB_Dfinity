@@ -9,6 +9,7 @@ type Room = record {
   id : text;
   fee : float64;
   title : text;
+  token : text;
   tickets : vec Ticket;
   groups : vec Group;
   messages : vec Message;
@@ -35,9 +36,11 @@ service : (principal, principal, principal) -> {
   FindRoom : (text) -> (opt Room) query;
   GetBoardVisa : () -> ();
   Hi : () -> (vec text, vec Room) query;
-  JoinRoom : (opt text, text) -> ();
+  JoinRoom : (opt text, text) -> (text);
+  LeaveRoom : (text) -> ();
   Like : () -> ();
   OpenRoom : (text, opt text) -> (text);
   Pay : (float64) -> ();
+  RefreshRoom : (text, text) -> ();
   Speak : (text) -> ();
 }
