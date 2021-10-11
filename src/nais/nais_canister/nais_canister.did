@@ -16,7 +16,8 @@ type StoreWASMArgs = record { wasm_module : vec nat8; wasm_type : WasmType };
 type WasmType = variant { Life; AvatarNFT; Board; VisaNFT; PABToken };
 service : () -> {
   ApplyCitizenship : (text) -> (opt principal);
-  BuildCivilization : (principal) -> (opt principal);
+  BuildCivilization : (principal) -> (principal);
+  Citizens : () -> (text) query;
   DeployNFTContract : (WasmType) -> (text);
   DeployTokenContract : () -> (text);
   GenesisCode : () -> (text) query;
@@ -28,6 +29,7 @@ service : () -> {
   RequestAvatarNft : (AvatarBytesArgs) -> (text);
   ResumeBoard : (principal) -> ();
   Sleep : (principal) -> ();
+  UpgradeCanister : (principal, WasmType) -> ();
   WakeUp : (principal) -> ();
   setFeeTokenID : (principal) -> ();
   uploadWasm : (StoreWASMArgs) -> ();

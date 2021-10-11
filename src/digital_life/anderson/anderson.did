@@ -5,20 +5,29 @@ type TalkTopic = variant { AboutPeople; AboutBoards };
 service : (principal, nat64, opt principal, principal) -> {
   Born : (text) -> (text);
   CreateBoard : () -> (principal);
+  CreateRoom : (text, opt text) -> ();
   Die : () -> ();
-  Follow : () -> ();
+  Follow : (principal) -> ();
+  FollowMe : () -> ();
+  Follows : (principal) -> (
+      vec record { principal; nat64 },
+      vec record { principal; nat64 },
+    ) query;
   Hi : () -> (text) query;
   HowOldAreYou : () -> (nat64) query;
-  Invite : () -> ();
   Like : () -> ();
+  Likes : () -> (vec nat64) query;
   Listen : (principal, text) -> (text);
-  Look : () -> (NFT) query;
-  LookLike : (NFT) -> ();
+  LookLike : () -> (NFT) query;
+  Makeup : (text, NFTSrc) -> ();
+  Paid : () -> ();
+  Pay : () -> ();
   ReceiveInviteCode : () -> (vec text);
   ReceiveNFT : (NFTType, principal, text) -> ();
-  Record : () -> ();
+  Record : (vec nat8) -> ();
   See : () -> ();
   Sleep : () -> ();
+  Speak : (principal, text) -> (text);
   Talk : (TalkTopic) -> (vec principal) query;
   UpdatePassword : (text) -> ();
   WakeUp : () -> ();

@@ -11,11 +11,15 @@ use human::{Human, Mood};
 use inter_call::{request_invite_code, create_board_call, open_room_call};
 use visa::{Ticket, Visa, VisaType};
 use nft::{NFT, NFTSrc, NFTType};
-use record::{Record, RecordType};
+use record::Record;
 use serde::Deserialize;
 
 static mut BORN: bool = false;
 static mut BIRTHDAY: u64 = 0;
+static mut LIKES: u64 = 0;
+static mut INCENTIVES: u64 = 0;
+static mut TOTALLIKES: u64 = 0;
+static mut TOTALINCENTIVES: u64 = 0;
 static mut OWNER: Principal = Principal::anonymous();
 static mut NAIS: Principal = Principal::anonymous();
 static mut INVITER: Option<Principal> = None;
@@ -34,6 +38,12 @@ struct MyRecords(Vec<Record>);
 struct MyBoards(Vec<Principal>);
 
 #[derive(Default, Debug)]
+struct MyFollowings(Vec<Principal>);
+
+#[derive(Default, Debug)]
+struct MyFollowers(Vec<Principal>);
+
+#[derive(Default, Debug)]
 struct BoardMembers(HashMap<String,Option<Visa>>);
 
 #[derive(Default, Debug)]
@@ -41,6 +51,9 @@ struct AvatarNFT(Vec<NFT>);
 
 #[derive(Deserialize, CandidType)]
 struct UpgradePayload {
+    totalincentives: u64,
+    totallikes: u64,
+    nais: Principal,
     born: bool,
     birthday: u64,
     owner: Principal,
@@ -51,7 +64,8 @@ struct UpgradePayload {
     seed: String,
     nfts: Vec<NFT>,
     visas: Vec<(String,Option<Visa>)>,
-    tickets: Vec<Ticket>
+    tickets: Vec<Ticket>,
+    boards: Vec<Principal>,
 }
 
 #[derive(Deserialize, CandidType)]
@@ -70,6 +84,7 @@ fn init(owner: Principal, lifeno: u64, inviter: Option<Principal>, nais: Princip
         NAIS = nais;
     }
 }
+
 
 #[update(name = "setToken")]
 #[candid_method(update, rename = "setToken")]
@@ -94,6 +109,22 @@ fn _only_owner() {
     }
 }
 
+fn _not_owner() {
+    unsafe {
+       if OWNER == caller() {
+           ic_cdk::trap("not owner");
+       }
+    }
+}
+
+fn _only_nais() {
+    unsafe {
+       if NAIS != caller() {
+           ic_cdk::trap("not owner");
+       }
+    }
+}
+
 fn _must_borned() {
     unsafe {
        if BORN != true {
@@ -105,7 +136,7 @@ fn _must_borned() {
 #[update(name = "Born")]
 #[candid_method(update, rename = "Born")]
 pub fn born(citizen_nft_id: String) -> String{
-
+    
     let me = storage::get_mut::<Human>();
     unsafe {
         if BORN {
@@ -153,19 +184,25 @@ pub fn whats_your_name() -> String{
     me.clone().name
 }
 
-#[query(name = "Look")]
-#[candid_method(query, rename = "Look")]
-pub fn look() -> NFT{
+#[query(name = "LookLike")]
+#[candid_method(query, rename = "LookLike")]
+pub fn look_like() -> NFT{
     let me = storage::get::<AvatarNFT>();
     match me.0.get(0) {
         Some(v) => v.clone(),
-        None => ic_cdk::trap("no face man")
+        None => ic_cdk::trap("mask man")
     }
 }
 
-#[update(name = "LookLike")]
-#[candid_method(update, rename = "LookLike")]
-pub fn look_like(view: NFT){
+#[update(name = "Makeup")]
+#[candid_method(update, rename = "Makeup")]
+pub fn makeup(idx: String, src: NFTSrc){
+    _only_owner();
+
+    let view = NFT {
+        id: idx,
+        src
+    };
     let me = storage::get_mut::<AvatarNFT>();
     me.0.insert(0, view);
 }
@@ -231,12 +268,16 @@ fn sleep() {
 #[update(name = "Die")]
 #[candid_method(update, rename = "Die")]
 fn die(){
-    _only_owner();
+//    _only_owner();
+    let mb = storage::get_mut::<MyBoards>();
+    mb.0.clear();
 }
 
 #[update(name = "CreateBoard")]
 #[candid_method(update, rename = "CreateBoard")]
 async fn create_board() -> Principal{
+    _only_owner();
+
     unsafe {
         let board_id = create_board_call(&NAIS, caller()).await;
         match board_id {
@@ -253,6 +294,8 @@ async fn create_board() -> Principal{
 #[update(name = "CreateRoom")]
 #[candid_method(update, rename = "CreateRoom")]
 async fn create_room(title: String, cover: Option<String>){
+    _only_owner();
+
     let mb = storage::get_mut::<MyBoards>();
     if mb.0.len() <= 0 {
         unsafe {
@@ -268,20 +311,40 @@ async fn create_room(title: String, cover: Option<String>){
     ).await;
 }
 
-#[update(name = "Invite")]
-#[candid_method(update, rename = "Invite")]
-fn invite() {
-    let records = storage::get_mut::<MyRecords>();
-    let record = Record { 
-        r_type: RecordType::Invite, 
-        log: (ic_cdk::api::time(), String::from("invite"), caller(), String::from("")) 
-    };
-    records.0.push(record);
+#[query(name = "Follows")]
+#[candid_method(query, rename = "Follows")]
+fn follows() -> (Vec<(Principal, u64)>, Vec<(Principal, u64)>){
+    _only_owner();
+
+    let mut followers: Vec<(Principal, u64)> = vec![];
+    let mut followings: Vec<(Principal, u64)> = vec![];
+    let me = storage::get::<Human>();
+    match me.clone().connections {
+        None => (),
+        Some(c) => {
+            followers = c.followers;
+            followings = c.followings;
+        }
+    }
+
+    (followers, followings)
 }
 
 #[update(name = "Follow")]
 #[candid_method(update, rename = "Follow")]
-fn follow() {
+async fn follow(f: Principal) {
+    _only_owner();
+
+    let me = storage::get_mut::<Human>();
+    inter_call::follow(&f).await;
+    me.add_following(f);
+}
+
+#[update(name = "FollowMe")]
+#[candid_method(update, rename = "FollowMe")]
+fn follow_me() {
+    _not_owner();
+
     let me = storage::get_mut::<Human>();
     me.add_followers(caller());
 }
@@ -322,22 +385,66 @@ pub async fn speak(board: Principal, room: String) -> String{
 
 #[update(name = "See")]
 #[candid_method(update, rename = "See")]
-fn see(){}
+fn see(){
+    _only_owner();
+
+}
 
 #[update(name = "Like")]
 #[candid_method(update, rename = "Like")]
 fn like(){
-    _only_owner();
+    _not_owner();
+
+    unsafe{
+        LIKES += 1;
+    }
+}
+
+#[query(name = "Likes")]
+#[candid_method(query, rename = "Likes")]
+fn likes() -> Vec<u64>{
+    unsafe{
+        vec![LIKES, TOTALLIKES, INCENTIVES, TOTALINCENTIVES]
+    }
+}
+
+#[update(name = "Paid")]
+#[candid_method(update, rename = "Paid")]
+fn paid(){
+    _only_nais();
+
+    unsafe{
+        TOTALLIKES += LIKES;
+        TOTALINCENTIVES += INCENTIVES;
+        LIKES = 0;
+        INCENTIVES = 0;
+    }
+}
+
+#[update(name = "Pay")]
+#[candid_method(update, rename = "Pay")]
+fn pay(){
+    _only_nais();
+    
+    unsafe{
+        INCENTIVES += 1;
+    }
 }
 
 #[update(name = "Record")]
 #[candid_method(update, rename = "Record")]
-fn record(){
+fn record(content: Vec<u8>){
     _only_owner();
+
+    let records = storage::get_mut::<MyRecords>();
+    records.0.push(Record(content));
 }
 
 #[pre_upgrade]
 fn pre_upgrade() {
+    let nais = unsafe { NAIS };
+    let totallikes = unsafe { TOTALLIKES };
+    let totalincentives = unsafe { TOTALINCENTIVES };
     let born = unsafe { BORN };
     let owner = unsafe { OWNER };
     let inviter = unsafe { INVITER };
@@ -360,8 +467,12 @@ fn pre_upgrade() {
     }
     let seed = storage::get::<Password>();
     let human = storage::get::<Human>();
+    let boards = storage::get::<MyBoards>();
 
     let up = UpgradePayload {
+        nais,
+        totallikes,
+        totalincentives,
         born,
         birthday,
         owner,
@@ -373,6 +484,7 @@ fn pre_upgrade() {
         nfts,
         visas,
         tickets,
+        boards: boards.0.clone(),
     };
    
     storage::stable_save((up, )).unwrap();
@@ -387,6 +499,9 @@ fn post_upgrade() {
         BORN = down.born;
         BIRTHDAY = down.birthday;
         LIFENO = down.life_no;
+        TOTALINCENTIVES = down.totalincentives;
+        TOTALLIKES = down.totallikes;
+        NAIS = down.nais;
     }
     let citi = storage::get_mut::<Citizenship>();
     citi.clone_from(&down.citizen);
@@ -400,6 +515,9 @@ fn post_upgrade() {
     }
     for v in down.tickets {
         storage::get_mut::<Tickets>().push(v);
+    }
+    for v in down.boards {
+        storage::get_mut::<MyBoards>().0.push(v);
     }
 
     let human = storage::get_mut::<Human>();
