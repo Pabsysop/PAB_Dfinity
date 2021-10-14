@@ -3,7 +3,6 @@ use candid::CandidType;
 
 mod profile;
 mod gene;
-mod view;
 
 #[derive(Clone, Debug, Deserialize, Serialize, Default, CandidType)]
 pub struct Ontology {

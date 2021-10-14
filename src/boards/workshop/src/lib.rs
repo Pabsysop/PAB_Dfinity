@@ -1,7 +1,3 @@
-mod nft;
-mod oracle;
-mod record;
-mod voice;
 mod message;
 
 use candid::{CandidType, Principal};
@@ -47,13 +43,6 @@ impl Default for Workshop {
 }
 
 impl Workshop {
-
-    fn build(&mut self, title: String, cover: String, owner: Principal, id: String){
-        self.title = title;
-        self.cover = cover;
-        self.owner = owner;
-        self.id = id;
-    }
 
     pub fn add_member(&mut self, member_id: String){
         self.members.push(member_id)
