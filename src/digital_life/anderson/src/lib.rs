@@ -306,7 +306,7 @@ async fn create_room(title: String, cover: Option<String>){
             }
         }
     }
-    let room_id = open_room_call(
+    let _room_id = open_room_call(
         mb.0.get(0).unwrap(), title, cover
     ).await;
 }

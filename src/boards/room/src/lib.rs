@@ -1,6 +1,5 @@
 mod group;
 mod message;
-mod voice;
 
 use std::{fmt::Debug, vec};
 use group::Group;
@@ -75,7 +74,7 @@ impl Room {
         }
     }
 
-    pub fn can_join(&self, person: &Principal, ticket: Option<String>) -> bool {
+    pub fn can_join(&self, person: &Principal, _ticket: Option<String>) -> bool {
         self.allows.contains(person)
     }
     

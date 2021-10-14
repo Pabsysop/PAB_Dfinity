@@ -2,7 +2,6 @@ use visa::Ticket;
 use candid::{CandidType, Principal};
 use serde::{Serialize, Deserialize};
 
-const BASE_FEE: u32 = 1;
 static COMMON_TITLE: &str = "Anonymous Event";
 static COMMON_VIEW: &str = "https://partyboard.org/media/figure/post_9.jpg";
 
@@ -33,13 +32,6 @@ impl Default for Event {
 }
 
 impl Event{
-
-    fn build(&mut self, title: String, cover: String, owner: Principal, id: String){
-        self.title = title;
-        self.cover = cover;
-        self.owner = owner;
-        self.id = id;
-    }
 
     pub fn add_member(&mut self, member_id: String){
         self.members.push(member_id)

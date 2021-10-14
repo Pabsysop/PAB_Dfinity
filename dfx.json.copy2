@@ -1,0 +1,29 @@
+{
+  "canisters": {
+    "anderson": {
+      "build": "make anderson",
+      "candid": "src/digital_life/anderson/anderson.did",
+      "wasm": "target/wasm32-unknown-unknown/release/anderson_opt.wasm",
+      "type": "custom"
+    },
+    "board": {
+      "build": "make board",
+      "candid": "src/boards/board_canister/board.did",
+      "wasm": "target/wasm32-unknown-unknown/release/board_canister_opt.wasm",
+      "type": "custom"
+    },
+    "nais": {
+      "build": "make nais",
+      "candid": "src/nais/nais_canister/nais_canister.did",
+      "wasm": "target/wasm32-unknown-unknown/release/nais_canister_opt.wasm",
+      "type": "custom"
+    }
+  },
+  "networks": {
+    "local": {
+      "bind": "0.0.0.0:8000",
+      "type": "ephemeral"
+    }
+  },
+  "version": 1
+}
