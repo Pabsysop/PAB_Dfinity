@@ -284,7 +284,7 @@ async fn new_nft_contract(wtype: WasmType) -> Result<String, String> {
                Err(e) => ic_cdk::trap(&e),
                Ok(create_result) => unsafe{
                    let install_args = encode_args((
-                       "PartyBoard Currency", "PAB", 12 as u64, 60000000000 as u64, id(),
+                       "PartyBoard Currency", "PAB", 12 as u64, 20000000000 as u64, id(),
                    )).unwrap_or(vec![]);
            
                    match install_canister(&create_result.canister_id, o.clone().into_vec(),
