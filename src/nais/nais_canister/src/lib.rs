@@ -663,6 +663,12 @@ pub async fn apply_citizenship(code: String) -> Option<LifeCanisterId> {
      }
  }
  
+ #[query(name = "Balance")]
+ #[candid_method(query, rename = "Balance")]
+ fn balance() -> u64{
+     ic_cdk::api::canister_balance()
+ }
+
  #[cfg(any(target_arch = "wasm32", test))]
  fn main() {}
  

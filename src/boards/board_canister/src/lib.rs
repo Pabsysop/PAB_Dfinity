@@ -241,6 +241,12 @@ fn like(){
 
 }
 
+#[query(name = "Balance")]
+#[candid_method(query, rename = "Balance")]
+fn balance() -> u64{
+    ic_cdk::api::canister_balance()
+}
+
 #[pre_upgrade]
 fn pre_upgrade() {
     let committee = storage::get_mut::<Committee>();
