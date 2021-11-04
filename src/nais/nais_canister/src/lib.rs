@@ -188,7 +188,7 @@
            let result = create_canister_call(create_args).await;
             match result {
                 Err(e) => ic_cdk::trap(&e),
-                Ok(create_result) => unsafe{
+                Ok(create_result) => {
                     let install_args = encode_args((
                         owner,
                         chairman,
