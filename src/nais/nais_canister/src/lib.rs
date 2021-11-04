@@ -4,10 +4,7 @@
  * License    : MIT
  * Maintainer : shiyong <shiyong0248@gmail.com>
  * Stability  : Experimental
- * Description: The UI canister on the "local" network is "r7inp-6aaaa-aaaaa-aaabq-cai" 
-                nais canister_id rrkah-fqaaa-aaaaa-aaaaq-cai
-                nft canister id rkp4c-7iaaa-aaaaa-aaaca-cai
-                anderson canister id qaa6y-5yaaa-aaaaa-aaafa-cai
+ * Description: 
  */
 
  mod inter_call;
