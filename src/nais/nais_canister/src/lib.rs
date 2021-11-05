@@ -4,10 +4,7 @@
  * License    : MIT
  * Maintainer : shiyong <shiyong0248@gmail.com>
  * Stability  : Experimental
- * Description: The UI canister on the "local" network is "r7inp-6aaaa-aaaaa-aaabq-cai" 
-                nais canister_id rrkah-fqaaa-aaaaa-aaaaq-cai
-                nft canister id rkp4c-7iaaa-aaaaa-aaaca-cai
-                anderson canister id qaa6y-5yaaa-aaaaa-aaafa-cai
+ * Description: 
  */
 
  mod inter_call;
@@ -32,7 +29,7 @@
  static mut FEE_TOKEN_ID: Principal = Principal::anonymous();
 //  static mut PAB_TOKEN_CANISTER: Principal = Principal::anonymous();
 //  static mut PAB_NFT_CANISTER: Principal = Principal::anonymous();
- const CYCLES_PER_TOKEN: u64 = 2000000000000;
+ const CYCLES_PER_TOKEN: u64 = 4000000000000;
  
  #[derive(Default, Debug)]
  struct GenesisCode(HashMap<String,(Option<String>, Option<Principal>)>);
@@ -188,7 +185,7 @@
            let result = create_canister_call(create_args).await;
             match result {
                 Err(e) => ic_cdk::trap(&e),
-                Ok(create_result) => unsafe{
+                Ok(create_result) => {
                     let install_args = encode_args((
                         owner,
                         chairman,
@@ -210,17 +207,20 @@ async fn new_nft_contract(wtype: WasmType) -> Result<String, String> {
      let nft_bytes: Option<serde_bytes::ByteBuf>;
      let name;
      let symbol;
+     let canister_id;
      match wtype {
          WasmType::VisaNFT => {
              nft_bytes = storage::get::<VisaNFTWASMBytes>().0.clone();
              name = String::from("PAB Visa NFT");
              symbol = String::from("PVN");
+             canister_id = Principal::from_text(String::from("vnuj4-hqaaa-aaaai-aa25a-cai")).unwrap();
           }
          WasmType::AvatarNFT => {
             nft_bytes = storage::get::<AvatarNFTWASMBytes>().0.clone();
             name = String::from("PAB Avatar NFT");
             symbol = String::from("PAN");
-         }
+            canister_id = Principal::from_text(String::from("vkvpi-kiaaa-aaaai-aa25q-cai")).unwrap();
+        }
          _ => { ic_cdk::trap("nft type error") }
      }
  
@@ -229,34 +229,19 @@ async fn new_nft_contract(wtype: WasmType) -> Result<String, String> {
              ic_cdk::trap("NFT code not emerge.");
          }
          Some(o) => {
-            let create_args = CreateCanisterArgs {
-                cycles: CYCLES_PER_TOKEN,
-                settings: CanisterSettings {
-                    controllers: Some(vec![id()]),
-                    compute_allocation: None,
-                    memory_allocation: None,
-                    freezing_threshold: None,
-                },
-            };
-           let result = create_canister_call(create_args).await;
-            match result {
-                Err(e) => ic_cdk::trap(&e),
-                Ok(create_result) => unsafe{
-                    let meta = NFTContractMeta{name: name.to_string(), symbol: symbol.to_string()};
-                    let install_args = encode_args((
-                        id(), meta,
-                    )).unwrap_or(vec![]);
-            
-                    match install_canister(&create_result.canister_id, o.clone().into_vec(),
-                                        install_args, None).await
-                    {
-                        Ok(_) => {
-                            init_nft_canister(&create_result.canister_id, &id(), name.to_string(), symbol.to_string()).await?;
-                            Ok(create_result.canister_id.to_string())
-                        } 
-                        Err(e) => ic_cdk::trap(format!("install nft contract mission failed due to : {}",e).as_str())
-                    }
-                }
+            let meta = NFTContractMeta{name: name.to_string(), symbol: symbol.to_string()};
+            let install_args = encode_args((
+                id(), meta,
+            )).unwrap_or(vec![]);
+    
+            match install_canister(&canister_id, o.clone().into_vec(),
+                                install_args, None).await
+            {
+                Ok(_) => {
+                    init_nft_canister(&canister_id, &id(), name.to_string(), symbol.to_string()).await?;
+                    Ok(canister_id.to_string())
+                } 
+                Err(e) => ic_cdk::trap(format!("install nft contract mission failed due to : {}",e).as_str())
             }
          },
      }
@@ -264,37 +249,24 @@ async fn new_nft_contract(wtype: WasmType) -> Result<String, String> {
 
  async fn new_token_contract() -> Result<String, String> {
     let token_bytes = storage::get::<PABWalletWASMBytes>();
+    let pab_token_canister_id = 
+        Principal::from_text(String::from("v3wa4-myaaa-aaaai-qadlq-cai")).unwrap();
 
     match &token_bytes.0 {
         None => {
             ic_cdk::trap("PAB Token code not emerge.");
         }
         Some(o) => {
-           let create_args = CreateCanisterArgs {
-               cycles: CYCLES_PER_TOKEN,
-               settings: CanisterSettings {
-                   controllers: Some(vec![id()]),
-                   compute_allocation: None,
-                   memory_allocation: None,
-                   freezing_threshold: None,
-               },
-           };
-          let result = create_canister_call(create_args).await;
-           match result {
-               Err(e) => ic_cdk::trap(&e),
-               Ok(create_result) => unsafe{
-                   let install_args = encode_args((
-                       "PartyBoard Currency", "PAB", 12 as u64, 60000000000 as u64, id(),
-                   )).unwrap_or(vec![]);
-           
-                   match install_canister(&create_result.canister_id, o.clone().into_vec(),
-                                       install_args, None).await
-                   {
-                       Ok(_) => Ok(create_result.canister_id.to_string()),
-                       Err(e) => ic_cdk::trap(format!("create token contract mission failed due to : {}",e).as_str())
-                   }
-               }
-           }
+            let install_args = encode_args((
+                "PartyBoard Currency", "PAB", 12 as u64, 20000000000 as u64, id(),
+            )).unwrap_or(vec![]);
+    
+            match install_canister(&pab_token_canister_id, o.clone().into_vec(),
+                                install_args, None).await
+            {
+                Ok(_) => Ok(pab_token_canister_id.to_string()),
+                Err(e) => ic_cdk::trap(format!("create token contract mission failed due to : {}",e).as_str())
+            }
         }
     }
 }
@@ -617,9 +589,9 @@ pub async fn apply_citizenship(code: String) -> Option<LifeCanisterId> {
     avatar_id
 }
 
- #[update(name = "IssuePAB")]
- #[candid_method(update, rename = "IssuePAB")]
- async fn issue_pab(args: IssueTokenArgs) -> Result<IssueResult, String> {
+ #[update(name = "IssueToken")]
+ #[candid_method(update, rename = "IssueToken")]
+ async fn issue_token(args: IssueTokenArgs) -> Result<IssueResult, String> {
      _only_owner();
      _must_initialized();
  
@@ -643,9 +615,9 @@ pub async fn apply_citizenship(code: String) -> Option<LifeCanisterId> {
      let create_result = create_canister_call(create_args).await?;
      let install_args = encode_args((
          args.name.clone(),
-         "PAB".clone(),
-         12.clone(),
-         400000000.clone(),
+         args.symbol.clone(),
+         args.decimals,
+         args.total_supply,
          caller().clone(),
      )).expect("Failed to encode arguments.");
  
@@ -688,6 +660,12 @@ pub async fn apply_citizenship(code: String) -> Option<LifeCanisterId> {
      }
  }
  
+ #[query(name = "Balance")]
+ #[candid_method(query, rename = "Balance")]
+ fn balance() -> u64{
+     ic_cdk::api::canister_balance()
+ }
+
  #[cfg(any(target_arch = "wasm32", test))]
  fn main() {}
  

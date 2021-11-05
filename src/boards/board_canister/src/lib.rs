@@ -8,8 +8,6 @@ use ic_cdk::api::caller;
 use candid::CandidType;
 use board::Board;
 use inter_call::{mint_visa_nft_call};
-use serde::__private::de::IdentifierDeserializer;
-use visa::{Ticket};
 use room::Room;
 use serde::{Deserialize};
 use record::Record;
@@ -53,10 +51,10 @@ fn in_committee_chairman(person: &Principal) -> bool {
     committee.chairman.contains(person)
 }
 
-fn in_committee(person: &Principal) -> bool {
-    let committee = storage::get::<Committee>();
-    committee.member.contains(person) || committee.chairman.contains(person)
-}
+// fn in_committee(person: &Principal) -> bool {
+//     let committee = storage::get::<Committee>();
+//     committee.member.contains(person) || committee.chairman.contains(person)
+// }
 
 fn in_population(person: &Principal) -> bool {
     let population = storage::get::<Population>();
@@ -142,7 +140,7 @@ fn fee() -> f64 {
 
 #[update(name = "Pay")]
 #[candid_method(update, rename = "Pay")]
-fn pay(amount: f64){
+fn pay(_amount: f64){
 
 }
 
@@ -243,12 +241,10 @@ fn like(){
 
 }
 
-fn open_event(){
-    _only_owner();
-}
-
-fn open_workshop(){
-    _only_owner();
+#[query(name = "Balance")]
+#[candid_method(query, rename = "Balance")]
+fn balance() -> u64{
+    ic_cdk::api::canister_balance()
 }
 
 #[pre_upgrade]

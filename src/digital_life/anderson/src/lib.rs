@@ -306,7 +306,7 @@ async fn create_room(title: String, cover: Option<String>){
             }
         }
     }
-    let room_id = open_room_call(
+    let _room_id = open_room_call(
         mb.0.get(0).unwrap(), title, cover
     ).await;
 }
@@ -438,6 +438,12 @@ fn record(content: Vec<u8>){
 
     let records = storage::get_mut::<MyRecords>();
     records.0.push(Record(content));
+}
+
+#[query(name = "Balance")]
+#[candid_method(query, rename = "Balance")]
+fn balance() -> u64{
+    ic_cdk::api::canister_balance()
 }
 
 #[pre_upgrade]

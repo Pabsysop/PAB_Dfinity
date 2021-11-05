@@ -1,4 +1,4 @@
-use candid::{CandidType, Principal};
+use candid::{CandidType};
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Deserialize, Serialize, CandidType)]
