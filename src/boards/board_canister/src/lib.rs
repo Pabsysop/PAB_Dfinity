@@ -174,7 +174,7 @@ fn refresh_room(token: String, room_id: String){
 #[update(name = "EditRoom")]
 #[candid_method(update, rename = "EditRoom")]
 fn edit_room(title: String, cover: String, room_id: String){
-    _only_owner();
+    _only_chairman();
 
     find_room(room_id)
     .map_or((), |r| {
@@ -186,7 +186,7 @@ fn edit_room(title: String, cover: String, room_id: String){
 #[update(name = "DeletRoom")]
 #[candid_method(update, rename = "DeletRoom")]
 fn del_room(room_id: String){
-    _only_owner();
+    _only_chairman();
 
     storage::get_mut::<BoardRooms>()
     .0
