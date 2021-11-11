@@ -192,7 +192,7 @@ pub fn about() -> Vec<u8>{
     .iter()
     .find(|rec| {
         let record = serde_json::from_slice(&rec.0);
-        record.map_or(false, |r: RecordDetail| r.content_type == RecordContentType::Intro)
+        record.map_or(false, |r: RecordDetail| r.content_type == RecordContentType::Intro(String::from("intro")))
     })
     .map_or (vec![],|r| {
         let record = serde_json::from_slice(&r.0);

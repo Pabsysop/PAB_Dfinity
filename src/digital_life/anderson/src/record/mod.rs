@@ -6,7 +6,7 @@ pub struct Record(pub Vec<u8>);
 
 #[derive(Clone, Debug, Deserialize, Serialize, CandidType, PartialEq)]
 pub enum RecordContentType {
-    Intro
+    Intro(String),
 }
 #[derive(Clone, Debug, Deserialize, Serialize, CandidType)]
 pub struct RecordDetail{
