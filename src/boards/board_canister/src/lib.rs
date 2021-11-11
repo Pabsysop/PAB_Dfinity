@@ -238,11 +238,11 @@ fn balance() -> u64{
 
 #[pre_upgrade]
 fn pre_upgrade() {
-    let committee = storage::get_mut::<Committee>();
-    let popu = storage::get_mut::<Population>();
-    let records = storage::get_mut::<Records>();
-    let rooms = storage::get_mut::<BoardRooms>();
-    let board = storage::get_mut::<Board>();
+    let committee = storage::get::<Committee>();
+    let popu = storage::get::<Population>();
+    let records = storage::get::<Records>();
+    let rooms = storage::get::<BoardRooms>();
+    let board = storage::get::<Board>();
 
     let up = UpgradePayload {
         rooms: rooms.0.clone(),
@@ -257,6 +257,17 @@ fn pre_upgrade() {
 
 #[post_upgrade]
 fn post_upgrade() {
+    let (down, ) : (UpgradePayload, ) = storage::stable_restore().unwrap();
+    let com = storage::get_mut::<Committee>();
+    com.clone_from(&down.committee);
+    let pop = storage::get_mut::<Population>();
+    pop.0.clone_from(&down.population);
+    let bdrs = storage::get_mut::<BoardRooms>();
+    bdrs.0.clone_from(&down.rooms);
+    let bd = storage::get_mut::<Board>();
+    bd.clone_from(&down.board);
+    let recs = storage::get_mut::<Records>();
+    recs.0.clone_from(&down.records);
 }
 
 #[cfg(any(target_arch = "wasm32", test))]
