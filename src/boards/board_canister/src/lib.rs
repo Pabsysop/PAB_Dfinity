@@ -167,72 +167,61 @@ fn open_room(title: String, cover: Option<String>) -> String{
 fn refresh_room(token: String, room_id: String){
     _only_chairman();
 
-    let room = find_room(room_id);
-    match room {
-        Some(mut r) => (r.token = token),       
-        None => ()
-    }
+    find_room(room_id)
+    .map_or((), |r| r.token = token)
 }
 
-#[query(name = "FindRoom")]
-#[candid_method(query, rename = "FindRoom")]
-fn find_room(room_id: String) -> Option<Room> {
-    let br = storage::get::<BoardRooms>();
-    for i in 0..br.0.len() {
-        let room = br.0.get(i);
-        match room {
-            Some(r) =>  { 
-                if r.id == room_id { 
-                    return Some(r.clone())
-                } 
-            }
-            None => ()
-        }
-    }
-    None
+#[update(name = "EditRoom")]
+#[candid_method(update, rename = "EditRoom")]
+fn edit_room(title: String, cover: String, room_id: String){
+    _only_chairman();
+
+    find_room(room_id)
+    .map_or((), |r| {
+        r.title = title;
+        r.cover = cover;
+    })
+}
+
+#[update(name = "DeleteRoom")]
+#[candid_method(update, rename = "DeleteRoom")]
+fn del_room(room_id: String){
+    _only_chairman();
+
+    storage::get_mut::<BoardRooms>()
+    .0
+    .retain(|r| r.id == room_id)
+}
+
+fn find_room(room_id: String) -> Option<&'static mut Room> {
+    storage::get_mut::<BoardRooms>()
+    .0
+    .iter_mut()
+    .find(|r| r.id == room_id)
+    .map_or(None, |r| Some(r))
 }
 
 #[update(name = "JoinRoom")]
 #[candid_method(update, rename = "JoinRoom")]
 fn join_room(ticket: Option<String>, room_id: String) -> String{
-    let room = find_room(room_id);
-    let token = match room {
-        Some(mut r) => {
-            if r.can_join(&caller(), ticket) {
-                r.audiens.push(caller());
-            }
-            r.token
-        }
-        None => String::from("")
-    };
-
-    token
+    find_room(room_id).map_or(String::from(""),
+    |room| {
+        room.audiens.push(caller());
+        room.token.clone()
+    })
 }
 
 #[update(name = "LeaveRoom")]
 #[candid_method(update, rename = "LeaveRoom")]
-fn leave_room(room_id: String){
-    let room = find_room(room_id);
-    match room {
-        Some(mut r) => {
-            r.audiens.retain(|x| *x != caller());
-        }
-        None => ()
-    }
+fn leave_room(room_id: String) {
+    find_room(room_id)
+    .map_or((), |r| r.audiens.retain(|p| p.to_owned() != caller()))
 }
 
 #[update(name = "Speak")]
 #[candid_method(update, rename = "Speak")]
 fn speak(room_id: String){
-    let room = find_room(room_id);
-    match room {
-        Some(mut r) => {
-            if r.can_speak(&caller()) {
-                r.speakers.push(caller());
-            }
-        }
-        None => {}
-    }
+    find_room(room_id).map_or((), |room| room.speakers.push(caller()))
 }
 
 #[update(name = "Like")]
@@ -249,11 +238,11 @@ fn balance() -> u64{
 
 #[pre_upgrade]
 fn pre_upgrade() {
-    let committee = storage::get_mut::<Committee>();
-    let popu = storage::get_mut::<Population>();
-    let records = storage::get_mut::<Records>();
-    let rooms = storage::get_mut::<BoardRooms>();
-    let board = storage::get_mut::<Board>();
+    let committee = storage::get::<Committee>();
+    let popu = storage::get::<Population>();
+    let records = storage::get::<Records>();
+    let rooms = storage::get::<BoardRooms>();
+    let board = storage::get::<Board>();
 
     let up = UpgradePayload {
         rooms: rooms.0.clone(),
@@ -268,6 +257,17 @@ fn pre_upgrade() {
 
 #[post_upgrade]
 fn post_upgrade() {
+    let (down, ) : (UpgradePayload, ) = storage::stable_restore().unwrap();
+    let com = storage::get_mut::<Committee>();
+    com.clone_from(&down.committee);
+    let pop = storage::get_mut::<Population>();
+    pop.0.clone_from(&down.population);
+    let bdrs = storage::get_mut::<BoardRooms>();
+    bdrs.0.clone_from(&down.rooms);
+    let bd = storage::get_mut::<Board>();
+    bd.clone_from(&down.board);
+    let recs = storage::get_mut::<Records>();
+    recs.0.clone_from(&down.records);
 }
 
 #[cfg(any(target_arch = "wasm32", test))]

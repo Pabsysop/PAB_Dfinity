@@ -77,7 +77,7 @@ pub async fn open_room_call(board_canister: &Principal, title: String, cover: Op
     let (room_id,): (String,) = match api::call::call(
         board_canister.clone(),
         "OpenRoom",
-        (title,cover,)
+        (title, cover,)
     ).await 
     {
         Ok(x) => x,
