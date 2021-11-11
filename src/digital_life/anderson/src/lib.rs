@@ -4,15 +4,16 @@ mod record;
 use std::string::String;
 use std::collections::HashMap;
 use ic_cdk::storage;
-use candid::{CandidType, Principal, candid_method};
+use candid::{CandidType, Principal, Result, candid_method};
 use ic_cdk::api::{caller, time};
 use ic_cdk_macros::*;
 use human::{Human, Mood};
 use inter_call::{request_invite_code, create_board_call, open_room_call};
 use visa::{Ticket, Visa, VisaType};
 use nft::{NFT, NFTSrc, NFTType};
-use record::Record;
-use serde::Deserialize;
+use record::{Record, RecordDetail, RecordContentType};
+use serde::{Deserialize, de::Error};
+use serde_json;
 
 static mut BORN: bool = false;
 static mut BIRTHDAY: u64 = 0;
@@ -183,6 +184,22 @@ pub fn whats_your_name() -> String{
     let me = storage::get_mut::<Human>();
     me.clone().name
 }
+
+#[query(name = "About")]
+#[candid_method(query, rename = "About")]
+pub fn about() -> Vec<u8>{
+    storage::get::<MyRecords>().0
+    .iter()
+    .find(|rec| {
+        let record = serde_json::from_slice(&rec.0);
+        record.map_or(false, |r: RecordDetail| r.content_type == RecordContentType::Intro)
+    })
+    .map_or (vec![],|r| {
+        let record = serde_json::from_slice(&r.0);
+        record.map_or(vec![], |rr: RecordDetail| rr.content)
+    })
+}
+
 
 #[query(name = "LookLike")]
 #[candid_method(query, rename = "LookLike")]

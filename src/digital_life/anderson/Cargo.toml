@@ -20,6 +20,7 @@ serde = "1.0.116"
 serde_cbor = "0.11"
 serde_bytes = "0.11"
 serde_with = "1.6.2"
+serde_json = "1.0.67"
 human = { path = "../human" }
 visa = { path = "../../boards/visa" }
 nft = { path = "../../nft" }
