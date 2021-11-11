@@ -183,8 +183,8 @@ fn edit_room(title: String, cover: String, room_id: String){
     })
 }
 
-#[update(name = "DeletRoom")]
-#[candid_method(update, rename = "DeletRoom")]
+#[update(name = "DeleteRoom")]
+#[candid_method(update, rename = "DeleteRoom")]
 fn del_room(room_id: String){
     _only_chairman();
 
