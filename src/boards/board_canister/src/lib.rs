@@ -16,7 +16,7 @@ type LifeCanisterId = Principal;
 
 static mut NAIS: Principal = Principal::anonymous();
 static mut OWNER: Principal = Principal::anonymous();
-static mut LIKES: u64;
+static mut LIKES: u64 = 0;
 
 #[derive(Debug, Default, Deserialize, CandidType, Clone)]
 struct Committee {

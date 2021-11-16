@@ -1,6 +1,14 @@
 use candid::Principal;
 use ic_cdk::api;
 
+pub async fn leave(board_canister: &Principal, room_id: String) {
+    let _ret: () = api::call::call(
+        board_canister.clone(),
+        "LeaveRoom", 
+        (room_id,)
+    ).await.unwrap_or(());
+}
+
 pub async fn listen(board_canister: &Principal, room_id: String, ticket: Option<String>) -> Result<String, String> {
     let (session,): (String,) = match api::call::call(
         board_canister.clone(),

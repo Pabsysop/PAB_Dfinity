@@ -381,6 +381,13 @@ pub async fn speak(board: Principal, room: String) -> String{
     .unwrap_or_else(|e| ic_cdk::trap(e.as_str()))
 }
 
+#[update(name = "Leave")]
+#[candid_method(update, rename = "Leave")]
+pub async fn leave(board: Principal, room: String){
+    _only_owner();
+    inter_call::leave(&board, room).await
+}
+
 #[update(name = "See")]
 #[candid_method(update, rename = "See")]
 fn see(){
