@@ -37,11 +37,11 @@ pub struct Human {
     pub name: String,
     pub ontology: Ontology,
     pub mood: Mood,
-    pub tag: Option<Tag>,
-    pub personality: Option<Personality>,
-    pub honor: Option<Honor>,
+    pub tag: Tag,
+    pub personality: Personality,
+    pub honor: Honor,
     pub assets: Vec<Assets>,
-    pub connections: Option<Connections>,
+    pub connections: Connections,
     pub value: f64
 }
 
@@ -51,11 +51,14 @@ impl Default for Human {
             name: Default::default(), 
             ontology: Default::default(), 
             mood: Mood::Clear,
-            tag: None, 
-            personality: None, 
-            honor: None, 
+            tag: Tag(vec![]),
+            personality: Personality(vec![]), 
+            honor: Honor(vec![]),
             assets: vec![],
-            connections: None,
+            connections: Connections {
+                    followers: vec![],
+                    followings: vec![],
+            },
             value: 0.0, 
         }
     }
@@ -75,36 +78,16 @@ impl Human {
     }
 
     pub fn add_following(&mut self, f: Principal){
-        let conns = self.connections.clone();
-        match conns {
-            Some(mut c) => {
-                c.followings.push((f, 0));
-                self.connections = Some(c);
-            }
-            None => {
-                let conns = Connections {
-                    followers: vec![],
-                    followings: vec![(f, 0)],
-                };
-                self.connections = Some(conns);
-            }
+        if !self.connections.followings.iter()
+        .any(|cf| cf.0 == f) {
+            self.connections.followers.push((f,0))
         }
     }
 
-    pub fn add_followers(&mut self, f: Principal){
-        let conns = self.connections.clone();
-        match conns {
-            Some(mut c) => {
-                c.followers.push((f, 0));
-                self.connections = Some(c);
-            }
-            None => {
-                let conns = Connections {
-                    followers: vec![(f, 0)],
-                    followings: vec![],
-                };
-                self.connections = Some(conns);
-            }
+    pub fn add_followers(&mut self, follower: Principal){
+        if !self.connections.followers.iter()
+        .any(|cf| cf.0 == follower) {
+            self.connections.followers.push((follower,0))
         }
     }
 

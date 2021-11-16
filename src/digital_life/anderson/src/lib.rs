@@ -86,7 +86,6 @@ fn init(owner: Principal, lifeno: u64, inviter: Option<Principal>, nais: Princip
     }
 }
 
-
 #[update(name = "setToken")]
 #[candid_method(update, rename = "setToken")]
 fn set_token(pab:Option<Principal>, nft:Option<Principal>){
@@ -266,11 +265,9 @@ pub fn rcv_nft(nft_type: NFTType, board: Principal, nft_id: String) {
 #[candid_method(update, rename = "ReceiveInviteCode")]
 pub async fn rcv_invite_code() -> Vec<String>{
     unsafe {
-        let res = request_invite_code(&NAIS).await;
-        match res {
-            Some(v) => v,
-            None => vec![]
-        }
+        request_invite_code(&NAIS)
+        .await
+        .unwrap_or(vec![])
     }
 }
 
@@ -296,15 +293,13 @@ async fn create_board() -> Principal{
     _only_owner();
 
     unsafe {
-        let board_id = create_board_call(&NAIS, caller()).await;
-        match board_id {
-            Some(id) => {
-                let mb = storage::get_mut::<MyBoards>();
-                mb.0.push(id);
-                id
-            }
-            None => ic_cdk::trap("create board error")
-        }
+        create_board_call(&NAIS, caller())
+        .await
+        .and_then(|bid| {
+            storage::get_mut::<MyBoards>().0.push(bid);
+            Some(bid)
+        })
+        .unwrap_or_else(|| ic_cdk::trap("create board error"))
     }
 }
 
@@ -316,11 +311,13 @@ async fn create_room(title: String, cover: Option<String>){
     let mb = storage::get_mut::<MyBoards>();
     if mb.0.len() <= 0 {
         unsafe {
-            let board_id = create_board_call(&NAIS, caller()).await;
-            match board_id {
-                Some(id) => mb.0.push(id),
-                None => ic_cdk::trap("create board error")
-            }
+            create_board_call(&NAIS, caller())
+            .await
+            .and_then(|bid| {
+                storage::get_mut::<MyBoards>().0.push(bid);
+                Some(bid)
+            })
+            .unwrap_or_else(|| ic_cdk::trap("create board error"));
         }
     }
     let _room_id = open_room_call(
@@ -332,19 +329,8 @@ async fn create_room(title: String, cover: Option<String>){
 #[candid_method(query, rename = "Follows")]
 fn follows() -> (Vec<(Principal, u64)>, Vec<(Principal, u64)>){
     _only_owner();
-
-    let mut followers: Vec<(Principal, u64)> = vec![];
-    let mut followings: Vec<(Principal, u64)> = vec![];
     let me = storage::get::<Human>();
-    match me.clone().connections {
-        None => (),
-        Some(c) => {
-            followers = c.followers;
-            followings = c.followings;
-        }
-    }
-
-    (followers, followings)
+    (me.connections.followers.clone(), me.connections.followings.clone())
 }
 
 #[update(name = "Follow")]
@@ -361,7 +347,6 @@ async fn follow(f: Principal) {
 #[candid_method(update, rename = "FollowMe")]
 fn follow_me() {
     _not_owner();
-
     let me = storage::get_mut::<Human>();
     me.add_followers(caller());
 }
@@ -382,36 +367,30 @@ fn talk(topic: TalkTopic) -> Vec<Principal> {
 #[candid_method(update, rename = "Listen")]
 pub async fn listen(board: Principal, room: String) -> String{
     _only_owner();
-    let res = inter_call::listen(&board, room, None).await;
-    match res {
-        Ok(session) => session,
-        Err(e) => ic_cdk::trap(e.as_str())
-    }
+    inter_call::listen(&board, room, None)
+    .await
+    .unwrap_or_else(|e| ic_cdk::trap(e.as_str()))
 }
 
 #[update(name = "Speak")]
 #[candid_method(update, rename = "Speak")]
 pub async fn speak(board: Principal, room: String) -> String{
     _only_owner();
-    let res = inter_call::speak(&board, room).await;
-    match res {
-        Ok(session) => session,
-        Err(e) => ic_cdk::trap(e.as_str())
-    }
+    inter_call::speak(&board, room)
+    .await
+    .unwrap_or_else(|e| ic_cdk::trap(e.as_str()))
 }
 
 #[update(name = "See")]
 #[candid_method(update, rename = "See")]
 fn see(){
     _only_owner();
-
 }
 
 #[update(name = "Like")]
 #[candid_method(update, rename = "Like")]
 fn like(){
     _not_owner();
-
     unsafe{
         LIKES += 1;
     }

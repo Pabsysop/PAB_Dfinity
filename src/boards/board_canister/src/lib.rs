@@ -16,6 +16,7 @@ type LifeCanisterId = Principal;
 
 static mut NAIS: Principal = Principal::anonymous();
 static mut OWNER: Principal = Principal::anonymous();
+static mut LIKES: u64;
 
 #[derive(Debug, Default, Deserialize, CandidType, Clone)]
 struct Committee {
@@ -198,15 +199,18 @@ fn find_room(room_id: String) -> Option<&'static mut Room> {
     .0
     .iter_mut()
     .find(|r| r.id == room_id)
-    .map_or(None, |r| Some(r))
 }
 
 #[update(name = "JoinRoom")]
 #[candid_method(update, rename = "JoinRoom")]
 fn join_room(ticket: Option<String>, room_id: String) -> String{
+    let caller = caller();
     find_room(room_id).map_or(String::from(""),
     |room| {
-        room.audiens.push(caller());
+        if !room.audiens.iter().any(|a| a.to_owned() == caller) {
+            room.audiens.push(caller);
+        }
+        room.speakers.retain(|s| s.to_owned() != caller);
         room.token.clone()
     })
 }
@@ -214,20 +218,33 @@ fn join_room(ticket: Option<String>, room_id: String) -> String{
 #[update(name = "LeaveRoom")]
 #[candid_method(update, rename = "LeaveRoom")]
 fn leave_room(room_id: String) {
+    let caller = caller();
     find_room(room_id)
-    .map_or((), |r| r.audiens.retain(|p| p.to_owned() != caller()))
+    .map_or((), |r| {
+        r.audiens.retain(|p| p.to_owned() != caller);
+        r.speakers.retain(|s| s.to_owned() != caller);
+    })
 }
 
 #[update(name = "Speak")]
 #[candid_method(update, rename = "Speak")]
 fn speak(room_id: String){
-    find_room(room_id).map_or((), |room| room.speakers.push(caller()))
+    let caller = caller();
+    find_room(room_id).map_or((), |room| {
+        if !room.speakers.iter().any(|a| a.to_owned() == caller) {
+            room.speakers.push(caller);
+        }
+        room.audiens.retain(|p| p.to_owned() != caller);
+    })
 }
 
 #[update(name = "Like")]
 #[candid_method(update, rename = "Like")]
-fn like(){
-
+fn like() -> u64{
+    unsafe {
+        LIKES += 1;
+        LIKES
+    }
 }
 
 #[query(name = "Balance")]
