@@ -374,13 +374,9 @@ pub async fn upgrade_canister(canister: Principal, wasm_type: WasmType){
     };
 
     let install_args = encode_args(()).expect("Failed to encode arguments.");
-     match install_canister(&canister, o.clone().into_vec(),
-                            install_args, Some(InstallMode::Upgrade)).await
-     {
-         Ok(_) => (),
-         Err(e) => ic_cdk::trap(format!("upgrade mission failed due to : {}",e).as_str())
-    }
-
+    install_canister(&canister, o.clone().into_vec(), install_args, Some(InstallMode::Upgrade))
+    .await
+    .unwrap_or_else(|e| ic_cdk::trap(format!("upgrade mission failed due to : {}",e).as_str()))
 }
 
 #[update(name = "ApplyCitizenship")]

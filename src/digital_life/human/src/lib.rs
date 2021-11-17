@@ -80,7 +80,7 @@ impl Human {
     pub fn add_following(&mut self, f: Principal){
         if !self.connections.followings.iter()
         .any(|cf| cf.0 == f) {
-            self.connections.followers.push((f,0))
+            self.connections.followings.push((f,0))
         }
     }
 
