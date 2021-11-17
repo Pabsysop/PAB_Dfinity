@@ -338,6 +338,10 @@ fn follows() -> (Vec<(Principal, u64)>, Vec<(Principal, u64)>){
 async fn follow(f: Principal) {
     _only_owner();
 
+    if f == caller() {
+        ic_cdk::trap("cannot follow yourself");
+    }
+
     let me = storage::get_mut::<Human>();
     inter_call::follow(&f).await;
     me.add_following(f);
@@ -374,11 +378,10 @@ pub async fn listen(board: Principal, room: String) -> String{
 
 #[update(name = "Speak")]
 #[candid_method(update, rename = "Speak")]
-pub async fn speak(board: Principal, room: String) -> String{
+pub async fn speak(board: Principal, room: String){
     _only_owner();
     inter_call::speak(&board, room)
     .await
-    .unwrap_or_else(|e| ic_cdk::trap(e.as_str()))
 }
 
 #[update(name = "Leave")]
