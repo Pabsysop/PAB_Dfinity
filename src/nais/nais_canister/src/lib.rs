@@ -15,7 +15,8 @@
  use ic_cdk::api::call::call;
  use ic_cdk_macros::*;
  use nft::TransferResult;
- use std::string::String;
+ use std::fmt::Debug;
+use std::string::String;
  use std::collections::HashMap;
  use inter_call::*;
  use inter_call::types::*;
@@ -655,7 +656,43 @@ pub async fn apply_citizenship(code: String) -> Option<LifeCanisterId> {
          }
      }
  }
+
+ #[update(name = "PayLikes")]
+ #[candid_method(update, rename = "PayLikes")]
+ async fn pay_likes(to: Principal, amount: String){
+    _only_owner();
+
+    let canister = storage::get::<CanisterID>();
+    let p = Principal::from_text(canister.p_a_b_token_canister_id.clone())
+    .unwrap_or_else(|p| ic_cdk::trap(p.to_string().as_str()));
+
+    mint_pab(&p, to, amount).await.unwrap_or_else(|p| ic_cdk::trap(p.as_str()))
+ }
  
+ #[update(name = "PayLogin")]
+ #[candid_method(update, rename = "PayLogin")]
+async fn pay_login(to: Principal, amount: String){
+     _only_owner();
+
+     let canister = storage::get::<CanisterID>();
+     let p = Principal::from_text(canister.p_a_b_token_canister_id.clone())
+     .unwrap_or_else(|p| ic_cdk::trap(p.to_string().as_str()));
+ 
+     mint_pab(&p, to, amount).await.unwrap_or_else(|p| ic_cdk::trap(p.as_str()))
+}
+
+#[update(name = "PayActivityMining")]
+#[candid_method(update, rename = "PayActivityMining")]
+async fn pay_activity_mining(to: Principal, amount: String){
+     _only_owner();
+
+     let canister = storage::get::<CanisterID>();
+     let p = Principal::from_text(canister.p_a_b_token_canister_id.clone())
+     .unwrap_or_else(|p| ic_cdk::trap(p.to_string().as_str()));
+ 
+     mint_pab(&p, to, amount).await.unwrap_or_else(|p| ic_cdk::trap(p.as_str()))
+}
+
  #[query(name = "Balance")]
  #[candid_method(query, rename = "Balance")]
  fn balance() -> u64{

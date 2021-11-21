@@ -17,6 +17,7 @@ type LifeCanisterId = Principal;
 static mut NAIS: Principal = Principal::anonymous();
 static mut OWNER: Principal = Principal::anonymous();
 static mut LIKES: u64 = 0;
+static mut ACTIVITIES: u64 = 0;
 
 #[derive(Debug, Default, Deserialize, CandidType, Clone)]
 struct Committee {
@@ -89,6 +90,20 @@ fn _only_owner() {
     }
 }
 
+fn _increase_activity(){
+    unsafe {
+        ACTIVITIES += 1;
+    }
+}
+
+fn _not_owner() {
+    unsafe {
+       if OWNER == caller() {
+           ic_cdk::trap("not owner");
+       }
+    }
+}
+
 fn _only_chairman() {
     if !in_committee_chairman(&caller()) {
         ic_cdk::trap("not in committee");
@@ -149,6 +164,8 @@ fn pay(_amount: f64){
 #[candid_method(update, rename = "OpenRoom")]
 fn open_room(title: String, cover: Option<String>) -> String{
     _only_chairman();
+    _increase_activity();
+
     let br = storage::get_mut::<BoardRooms>();
 
     let id = (br.0.len() + 1).to_string();
@@ -167,6 +184,7 @@ fn open_room(title: String, cover: Option<String>) -> String{
 #[candid_method(update, rename = "RefreshRoom")]
 fn refresh_room(token: String, room_id: String){
     _only_chairman();
+    _increase_activity();
 
     find_room(room_id)
     .map_or((), |r| r.token = token)
@@ -176,6 +194,7 @@ fn refresh_room(token: String, room_id: String){
 #[candid_method(update, rename = "EditRoom")]
 fn edit_room(title: String, cover: String, room_id: String){
     _only_chairman();
+    _increase_activity();
 
     find_room(room_id)
     .map_or((), |r| {
@@ -188,6 +207,7 @@ fn edit_room(title: String, cover: String, room_id: String){
 #[candid_method(update, rename = "DeleteRoom")]
 fn del_room(room_id: String){
     _only_chairman();
+    _increase_activity();
 
     storage::get_mut::<BoardRooms>()
     .0
@@ -204,6 +224,8 @@ fn find_room(room_id: String) -> Option<&'static mut Room> {
 #[update(name = "JoinRoom")]
 #[candid_method(update, rename = "JoinRoom")]
 fn join_room(ticket: Option<String>, room_id: String) -> String{
+    _increase_activity();
+
     let caller = caller();
     find_room(room_id).map_or(String::from(""),
     |room| {
@@ -218,6 +240,8 @@ fn join_room(ticket: Option<String>, room_id: String) -> String{
 #[update(name = "LeaveRoom")]
 #[candid_method(update, rename = "LeaveRoom")]
 fn leave_room(room_id: String) {
+    _increase_activity();
+
     let caller = caller();
     find_room(room_id)
     .map_or((), |r| {
@@ -229,6 +253,8 @@ fn leave_room(room_id: String) {
 #[update(name = "Speak")]
 #[candid_method(update, rename = "Speak")]
 fn speak(room_id: String){
+    _increase_activity();
+
     let caller = caller();
     find_room(room_id).map_or((), |room| {
         if !room.speakers.iter().any(|a| a.to_owned() == caller) {
@@ -241,9 +267,20 @@ fn speak(room_id: String){
 #[update(name = "Like")]
 #[candid_method(update, rename = "Like")]
 fn like() -> u64{
+    _not_owner();
+    _increase_activity();
+
     unsafe {
         LIKES += 1;
         LIKES
+    }
+}
+
+#[query(name = "Activities")]
+#[candid_method(query, rename = "Activities")]
+fn activities() -> Vec<u64>{
+    unsafe{
+        vec![LIKES, ACTIVITIES]
     }
 }
 
