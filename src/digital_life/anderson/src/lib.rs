@@ -427,9 +427,9 @@ fn paid(){
     }
 }
 
-#[update(name = "Pay")]
-#[candid_method(update, rename = "Pay")]
-fn pay(){
+#[update(name = "Incentive")]
+#[candid_method(update, rename = "Incentive")]
+fn incentive(){
     _only_nais();
     
     unsafe{
