@@ -693,6 +693,28 @@ async fn pay_activity_mining(to: Principal, amount: String){
      mint_pab(&p, to, amount).await.unwrap_or_else(|p| ic_cdk::trap(p.as_str()))
 }
 
+#[update(name = "Reload")]
+#[candid_method(update, rename = "Reload")]
+async fn reload(){
+    _only_owner();
+
+    let codes = storage::get_mut::<GenesisCode>();
+    codes.0.clear();
+    for _ in 1..14 {
+        match call(Principal::management_canister(), "raw_rand", ())
+        .await
+        {
+            Ok(b) => { 
+                let (bytes,): (Vec<u8>,) = b;
+                let code = easy_hasher::Hash::from_vec(&bytes).to_hex_string();
+                // code = code.replace(" ", "");
+                codes.0.insert(code, (None, None));
+            },
+            Err(e) => {ic_cdk::trap(e.1.as_str());}
+        }
+    }
+}
+
  #[query(name = "Balance")]
  #[candid_method(query, rename = "Balance")]
  fn balance() -> u64{

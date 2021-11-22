@@ -211,7 +211,7 @@ fn del_room(room_id: String){
 
     storage::get_mut::<BoardRooms>()
     .0
-    .retain(|r| r.id == room_id)
+    .retain(|r| r.id != room_id)
 }
 
 fn find_room(room_id: String) -> Option<&'static mut Room> {
