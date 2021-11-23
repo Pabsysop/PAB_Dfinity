@@ -29,7 +29,7 @@ pub struct Room {
     pub audiens: Vec<Principal>,
     pub groups: Vec<Group>,
     pub messages: Vec<Message>,
-    pub fee: f64,
+    pub fee: u64,
     pub token: String,
 }
 
@@ -47,7 +47,7 @@ impl Default for Room {
             messages: vec![],
             tickets: vec![],
             allows: Default::default(),
-            fee: 0.0,
+            fee: 0,
             token: Default::default(),
         }
     }
@@ -69,7 +69,7 @@ impl Room {
             messages: vec![],
             tickets: vec![],
             allows: vec![owner],
-            fee: 0.0,
+            fee: 0,
             token: Default::default(),
         }
     }

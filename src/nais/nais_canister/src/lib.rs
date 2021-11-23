@@ -16,7 +16,7 @@
  use ic_cdk_macros::*;
  use nft::TransferResult;
  use std::fmt::Debug;
-use std::string::String;
+ use std::string::String;
  use std::collections::HashMap;
  use inter_call::*;
  use inter_call::types::*;
@@ -183,15 +183,17 @@ use std::string::String;
                     freezing_threshold: None,
                 },
             };
+            
            let result = create_canister_call(create_args).await;
             match result {
                 Err(e) => ic_cdk::trap(&e),
                 Ok(create_result) => {
-                    let install_args = encode_args((
+                    let install_args = encode_args(unsafe{(
                         owner,
                         chairman,
                         id(),
-                    ))
+                        FEE_TOKEN_ID,
+                    )})
                     .expect("Failed to encode arguments.");
                      match install_canister(&create_result.canister_id, o.clone().into_vec(),
                                             install_args, None).await
@@ -548,6 +550,7 @@ pub async fn apply_citizenship(code: String) -> Option<LifeCanisterId> {
  fn set_fee_token_id(token_id: Principal) {
      _must_initialized();
      _only_owner();
+
      unsafe { FEE_TOKEN_ID = token_id };
  }
  

@@ -12,12 +12,15 @@ use room::Room;
 use serde::{Deserialize};
 use record::Record;
 
+use crate::inter_call::pab_balance;
+
 type LifeCanisterId = Principal;
 
 static mut NAIS: Principal = Principal::anonymous();
 static mut OWNER: Principal = Principal::anonymous();
 static mut LIKES: u64 = 0;
 static mut ACTIVITIES: u64 = 0;
+static mut FEE_TOKEN_ID: Principal = Principal::anonymous();
 
 #[derive(Debug, Default, Deserialize, CandidType, Clone)]
 struct Committee {
@@ -70,13 +73,14 @@ fn increase_population(person: Principal){
 
 #[init]
 #[candid_method(init)]
-fn init(owner: Principal, chairman: Principal, nais: Principal) {
+fn init(owner: Principal, chairman: Principal, nais: Principal, fee_token: Principal) {
     unsafe {
         OWNER = owner;
         let committee = storage::get_mut::<Committee>();
         committee.chairman.push(owner);
         committee.chairman.push(chairman);
         NAIS = nais;
+        FEE_TOKEN_ID = fee_token;
     }
     increase_population(owner);
     increase_population(chairman);
@@ -162,7 +166,7 @@ fn pay(_amount: f64){
 
 #[update(name = "OpenRoom")]
 #[candid_method(update, rename = "OpenRoom")]
-fn open_room(title: String, cover: Option<String>) -> String{
+async fn open_room(title: String, cover: Option<String>) -> String{
     _only_chairman();
     _increase_activity();
 
@@ -171,6 +175,9 @@ fn open_room(title: String, cover: Option<String>) -> String{
     let id = (br.0.len() + 1).to_string();
     if in_population(&caller()) {
         let room = room::Room::build(id.clone(), title, cover, caller());
+        if pab_balance(unsafe{&FEE_TOKEN_ID}).await.unwrap_or(0) < room.fee {
+            ic_cdk::trap("no enough fee balance");
+        }
         br.0.push(room.clone());
         ic_cdk::println!("open room {} for {} in {}", room.id, room.owner.to_owned(), ic_cdk::id());
     }else{

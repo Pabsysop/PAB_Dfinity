@@ -104,3 +104,23 @@ pub async fn follow(life_canister: &Principal){
         }
     };
 }
+
+pub async fn transfer_pab(pab_canister: &Principal, to: &Principal, amount: String) -> Result<bool, String> {
+
+    let (ret,): (bool,) = match api::call::call(
+        pab_canister.clone(),
+        "transfer", 
+        (to,amount,)
+    ).await 
+    {
+        Ok(x) => x,
+        Err((code, msg)) => {
+            return Err(format!(
+                "An error happened during the call: {}: {}",
+                code as u8, msg
+            ))
+        }
+    };
+
+    Ok(ret)
+}

@@ -1,6 +1,6 @@
 pub mod types;
 
-use ic_cdk::api;
+use ic_cdk::{api, id};
 use candid::Principal;
 use nft::*;
 
@@ -32,4 +32,24 @@ pub async fn mint_visa_nft_call(nft_can: Principal, owner: Principal) -> Result<
     };
  
     Ok(nft_id)
+}
+
+pub async fn pab_balance(pab_canister: &Principal) -> Result<u64, String> {
+
+    let (balance,): (u64,) = match api::call::call(
+        pab_canister.clone(),
+        "balance_of", 
+        (id(),)
+    ).await 
+    {
+        Ok(x) => x,
+        Err((code, msg)) => {
+            return Err(format!(
+                "An error happened during the call: {}: {}",
+                code as u8, msg
+            ))
+        }
+    };
+
+    Ok(balance)
 }

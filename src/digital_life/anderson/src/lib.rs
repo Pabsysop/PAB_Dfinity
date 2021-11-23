@@ -8,7 +8,7 @@ use candid::{CandidType, Principal, candid_method};
 use ic_cdk::api::{caller, time};
 use ic_cdk_macros::*;
 use human::{Human, Mood};
-use inter_call::{request_invite_code, create_board_call, open_room_call};
+use inter_call::{create_board_call, open_room_call, request_invite_code, transfer_pab};
 use visa::{Ticket, Visa, VisaType};
 use nft::{NFT, NFTSrc, NFTType};
 use record::{Record, RecordDetail, RecordContentType};
@@ -86,21 +86,6 @@ fn init(owner: Principal, lifeno: u64, inviter: Option<Principal>, nais: Princip
     }
 }
 
-#[update(name = "setToken")]
-#[candid_method(update, rename = "setToken")]
-fn set_token(pab:Option<Principal>, nft:Option<Principal>){
-    unsafe {
-        match pab {
-            Some(o) => PAB_TOKEN_CANISTER =o,
-            _ => {}
-        }
-        match nft {
-            Some(o) => PAB_NFT_CANISTER =o,
-            _ => {}
-        }
-    }
-}
-
 fn _only_owner() {
     unsafe {
        if OWNER != caller() {
@@ -130,6 +115,23 @@ fn _must_borned() {
        if BORN != true {
            ic_cdk::trap("not born");
        }
+    }
+}
+
+#[update(name = "setToken")]
+#[candid_method(update, rename = "setToken")]
+fn set_token(pab:Option<Principal>, nft:Option<Principal>){
+    _only_nais();
+    
+    unsafe {
+        match pab {
+            Some(o) => PAB_TOKEN_CANISTER =o,
+            _ => {}
+        }
+        match nft {
+            Some(o) => PAB_NFT_CANISTER =o,
+            _ => {}
+        }
     }
 }
 
@@ -323,6 +325,19 @@ async fn create_room(title: String, cover: Option<String>){
     let _room_id = open_room_call(
         mb.0.get(0).unwrap(), title, cover
     ).await;
+}
+
+#[update(name = "DepositFee")]
+#[candid_method(update, rename = "DepositFee")]
+async fn deposit_fee(amount: String) -> bool{
+    _only_owner();
+
+    let mb = storage::get::<MyBoards>();
+    if mb.0.len() < 1 {
+        ic_cdk::trap("no board to deposit")
+    }
+    transfer_pab(unsafe{&PAB_TOKEN_CANISTER}, mb.0.get(0).unwrap(), amount)
+    .await.unwrap_or_else(|e| ic_cdk::trap(format!("transfer error: {}",e).as_str()))
 }
 
 #[query(name = "Follows")]
