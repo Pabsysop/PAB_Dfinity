@@ -53,3 +53,23 @@ pub async fn pab_balance(pab_canister: &Principal) -> Result<u64, String> {
 
     Ok(balance)
 }
+
+pub async fn pay_fee(pab_canister: &Principal, nais: Principal, amount: String) -> Result<bool, String> {
+
+    let (ret,): (bool,) = match api::call::call(
+        pab_canister.clone(),
+        "transfer", 
+        (nais,amount,)
+    ).await 
+    {
+        Ok(x) => x,
+        Err((code, msg)) => {
+            return Err(format!(
+                "An error happened during the call: {}: {}",
+                code as u8, msg
+            ))
+        }
+    };
+
+    Ok(ret)
+}

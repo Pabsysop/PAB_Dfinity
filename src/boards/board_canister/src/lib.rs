@@ -7,7 +7,7 @@ use ic_cdk::{id, storage};
 use ic_cdk::api::caller;
 use candid::CandidType;
 use board::Board;
-use inter_call::{mint_visa_nft_call};
+use inter_call::{mint_visa_nft_call, pay_fee};
 use room::Room;
 use serde::{Deserialize};
 use record::Record;
@@ -152,16 +152,14 @@ fn hi() -> (Vec<String>, Vec<Room>) {
     // }
 }
 
-#[query(name = "Fee")]
-#[candid_method(query, rename = "Fee")]
-fn fee() -> f64 {
-    0.0
-}
-
 #[update(name = "Pay")]
 #[candid_method(update, rename = "Pay")]
-fn pay(_amount: f64){
+async fn pay(amount: String) -> bool{
+    _only_owner();
 
+    unsafe{
+        pay_fee(&FEE_TOKEN_ID, NAIS, amount).await.unwrap_or(false)
+    }
 }
 
 #[update(name = "OpenRoom")]
