@@ -7,15 +7,20 @@ use ic_cdk::{id, storage};
 use ic_cdk::api::caller;
 use candid::CandidType;
 use board::Board;
-use inter_call::{mint_visa_nft_call};
+use inter_call::{mint_visa_nft_call, pay_fee};
 use room::Room;
 use serde::{Deserialize};
 use record::Record;
+
+use crate::inter_call::pab_balance;
 
 type LifeCanisterId = Principal;
 
 static mut NAIS: Principal = Principal::anonymous();
 static mut OWNER: Principal = Principal::anonymous();
+static mut LIKES: u64 = 0;
+static mut ACTIVITIES: u64 = 0;
+static mut FEE_TOKEN_ID: Principal = Principal::anonymous();
 
 #[derive(Debug, Default, Deserialize, CandidType, Clone)]
 struct Committee {
@@ -68,13 +73,14 @@ fn increase_population(person: Principal){
 
 #[init]
 #[candid_method(init)]
-fn init(owner: Principal, chairman: Principal, nais: Principal) {
+fn init(owner: Principal, chairman: Principal, nais: Principal, fee_token: Principal) {
     unsafe {
         OWNER = owner;
         let committee = storage::get_mut::<Committee>();
         committee.chairman.push(owner);
         committee.chairman.push(chairman);
         NAIS = nais;
+        FEE_TOKEN_ID = fee_token;
     }
     increase_population(owner);
     increase_population(chairman);
@@ -83,6 +89,20 @@ fn init(owner: Principal, chairman: Principal, nais: Principal) {
 fn _only_owner() {
     unsafe {
        if OWNER != caller() {
+           ic_cdk::trap("not owner");
+       }
+    }
+}
+
+fn _increase_activity(){
+    unsafe {
+        ACTIVITIES += 1;
+    }
+}
+
+fn _not_owner() {
+    unsafe {
+       if OWNER == caller() {
            ic_cdk::trap("not owner");
        }
     }
@@ -132,27 +152,30 @@ fn hi() -> (Vec<String>, Vec<Room>) {
     // }
 }
 
-#[query(name = "Fee")]
-#[candid_method(query, rename = "Fee")]
-fn fee() -> f64 {
-    0.0
-}
-
 #[update(name = "Pay")]
 #[candid_method(update, rename = "Pay")]
-fn pay(_amount: f64){
+async fn pay(amount: String) -> bool{
+    _only_owner();
 
+    unsafe{
+        pay_fee(&FEE_TOKEN_ID, NAIS, amount).await.unwrap_or(false)
+    }
 }
 
 #[update(name = "OpenRoom")]
 #[candid_method(update, rename = "OpenRoom")]
-fn open_room(title: String, cover: Option<String>) -> String{
+async fn open_room(title: String, cover: Option<String>) -> String{
     _only_chairman();
+    _increase_activity();
+
     let br = storage::get_mut::<BoardRooms>();
 
     let id = (br.0.len() + 1).to_string();
     if in_population(&caller()) {
         let room = room::Room::build(id.clone(), title, cover, caller());
+        if pab_balance(unsafe{&FEE_TOKEN_ID}).await.unwrap_or(0) < room.fee {
+            ic_cdk::trap("no enough fee balance");
+        }
         br.0.push(room.clone());
         ic_cdk::println!("open room {} for {} in {}", room.id, room.owner.to_owned(), ic_cdk::id());
     }else{
@@ -166,6 +189,7 @@ fn open_room(title: String, cover: Option<String>) -> String{
 #[candid_method(update, rename = "RefreshRoom")]
 fn refresh_room(token: String, room_id: String){
     _only_chairman();
+    _increase_activity();
 
     find_room(room_id)
     .map_or((), |r| r.token = token)
@@ -175,6 +199,7 @@ fn refresh_room(token: String, room_id: String){
 #[candid_method(update, rename = "EditRoom")]
 fn edit_room(title: String, cover: String, room_id: String){
     _only_chairman();
+    _increase_activity();
 
     find_room(room_id)
     .map_or((), |r| {
@@ -187,10 +212,11 @@ fn edit_room(title: String, cover: String, room_id: String){
 #[candid_method(update, rename = "DeleteRoom")]
 fn del_room(room_id: String){
     _only_chairman();
+    _increase_activity();
 
     storage::get_mut::<BoardRooms>()
     .0
-    .retain(|r| r.id == room_id)
+    .retain(|r| r.id != room_id)
 }
 
 fn find_room(room_id: String) -> Option<&'static mut Room> {
@@ -198,15 +224,20 @@ fn find_room(room_id: String) -> Option<&'static mut Room> {
     .0
     .iter_mut()
     .find(|r| r.id == room_id)
-    .map_or(None, |r| Some(r))
 }
 
 #[update(name = "JoinRoom")]
 #[candid_method(update, rename = "JoinRoom")]
 fn join_room(ticket: Option<String>, room_id: String) -> String{
+    _increase_activity();
+
+    let caller = caller();
     find_room(room_id).map_or(String::from(""),
     |room| {
-        room.audiens.push(caller());
+        if !room.audiens.iter().any(|a| a.to_owned() == caller) {
+            room.audiens.push(caller);
+        }
+        room.speakers.retain(|s| s.to_owned() != caller);
         room.token.clone()
     })
 }
@@ -214,20 +245,48 @@ fn join_room(ticket: Option<String>, room_id: String) -> String{
 #[update(name = "LeaveRoom")]
 #[candid_method(update, rename = "LeaveRoom")]
 fn leave_room(room_id: String) {
+    _increase_activity();
+
+    let caller = caller();
     find_room(room_id)
-    .map_or((), |r| r.audiens.retain(|p| p.to_owned() != caller()))
+    .map_or((), |r| {
+        r.audiens.retain(|p| p.to_owned() != caller);
+        r.speakers.retain(|s| s.to_owned() != caller);
+    })
 }
 
 #[update(name = "Speak")]
 #[candid_method(update, rename = "Speak")]
 fn speak(room_id: String){
-    find_room(room_id).map_or((), |room| room.speakers.push(caller()))
+    _increase_activity();
+
+    let caller = caller();
+    find_room(room_id).map_or((), |room| {
+        if !room.speakers.iter().any(|a| a.to_owned() == caller) {
+            room.speakers.push(caller);
+        }
+        room.audiens.retain(|p| p.to_owned() != caller);
+    })
 }
 
 #[update(name = "Like")]
 #[candid_method(update, rename = "Like")]
-fn like(){
+fn like() -> u64{
+    _not_owner();
+    _increase_activity();
 
+    unsafe {
+        LIKES += 1;
+        LIKES
+    }
+}
+
+#[query(name = "Activities")]
+#[candid_method(query, rename = "Activities")]
+fn activities() -> Vec<u64>{
+    unsafe{
+        vec![LIKES, ACTIVITIES]
+    }
 }
 
 #[query(name = "Balance")]

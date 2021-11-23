@@ -15,6 +15,7 @@
  use ic_cdk::api::call::call;
  use ic_cdk_macros::*;
  use nft::TransferResult;
+ use std::fmt::Debug;
  use std::string::String;
  use std::collections::HashMap;
  use inter_call::*;
@@ -182,15 +183,17 @@
                     freezing_threshold: None,
                 },
             };
+            
            let result = create_canister_call(create_args).await;
             match result {
                 Err(e) => ic_cdk::trap(&e),
                 Ok(create_result) => {
-                    let install_args = encode_args((
+                    let install_args = encode_args(unsafe{(
                         owner,
                         chairman,
                         id(),
-                    ))
+                        FEE_TOKEN_ID,
+                    )})
                     .expect("Failed to encode arguments.");
                      match install_canister(&create_result.canister_id, o.clone().into_vec(),
                                             install_args, None).await
@@ -374,13 +377,9 @@ pub async fn upgrade_canister(canister: Principal, wasm_type: WasmType){
     };
 
     let install_args = encode_args(()).expect("Failed to encode arguments.");
-     match install_canister(&canister, o.clone().into_vec(),
-                            install_args, Some(InstallMode::Upgrade)).await
-     {
-         Ok(_) => (),
-         Err(e) => ic_cdk::trap(format!("upgrade mission failed due to : {}",e).as_str())
-    }
-
+    install_canister(&canister, o.clone().into_vec(), install_args, Some(InstallMode::Upgrade))
+    .await
+    .unwrap_or_else(|e| ic_cdk::trap(format!("upgrade mission failed due to : {}",e).as_str()))
 }
 
 #[update(name = "ApplyCitizenship")]
@@ -551,6 +550,7 @@ pub async fn apply_citizenship(code: String) -> Option<LifeCanisterId> {
  fn set_fee_token_id(token_id: Principal) {
      _must_initialized();
      _only_owner();
+
      unsafe { FEE_TOKEN_ID = token_id };
  }
  
@@ -659,7 +659,65 @@ pub async fn apply_citizenship(code: String) -> Option<LifeCanisterId> {
          }
      }
  }
+
+ #[update(name = "PayLikes")]
+ #[candid_method(update, rename = "PayLikes")]
+ async fn pay_likes(to: Principal, amount: String){
+    _only_owner();
+
+    let canister = storage::get::<CanisterID>();
+    let p = Principal::from_text(canister.p_a_b_token_canister_id.clone())
+    .unwrap_or_else(|p| ic_cdk::trap(p.to_string().as_str()));
+
+    mint_pab(&p, to, amount).await.unwrap_or_else(|p| ic_cdk::trap(p.as_str()))
+ }
  
+ #[update(name = "PayLogin")]
+ #[candid_method(update, rename = "PayLogin")]
+async fn pay_login(to: Principal, amount: String){
+     _only_owner();
+
+     let canister = storage::get::<CanisterID>();
+     let p = Principal::from_text(canister.p_a_b_token_canister_id.clone())
+     .unwrap_or_else(|p| ic_cdk::trap(p.to_string().as_str()));
+ 
+     mint_pab(&p, to, amount).await.unwrap_or_else(|p| ic_cdk::trap(p.as_str()))
+}
+
+#[update(name = "PayActivityMining")]
+#[candid_method(update, rename = "PayActivityMining")]
+async fn pay_activity_mining(to: Principal, amount: String){
+     _only_owner();
+
+     let canister = storage::get::<CanisterID>();
+     let p = Principal::from_text(canister.p_a_b_token_canister_id.clone())
+     .unwrap_or_else(|p| ic_cdk::trap(p.to_string().as_str()));
+ 
+     mint_pab(&p, to, amount).await.unwrap_or_else(|p| ic_cdk::trap(p.as_str()))
+}
+
+#[update(name = "Reload")]
+#[candid_method(update, rename = "Reload")]
+async fn reload(){
+    _only_owner();
+
+    let codes = storage::get_mut::<GenesisCode>();
+    codes.0.clear();
+    for _ in 1..14 {
+        match call(Principal::management_canister(), "raw_rand", ())
+        .await
+        {
+            Ok(b) => { 
+                let (bytes,): (Vec<u8>,) = b;
+                let code = easy_hasher::Hash::from_vec(&bytes).to_hex_string();
+                // code = code.replace(" ", "");
+                codes.0.insert(code, (None, None));
+            },
+            Err(e) => {ic_cdk::trap(e.1.as_str());}
+        }
+    }
+}
+
  #[query(name = "Balance")]
  #[candid_method(query, rename = "Balance")]
  fn balance() -> u64{

@@ -8,7 +8,7 @@ use candid::{CandidType, Principal, candid_method};
 use ic_cdk::api::{caller, time};
 use ic_cdk_macros::*;
 use human::{Human, Mood};
-use inter_call::{request_invite_code, create_board_call, open_room_call};
+use inter_call::{create_board_call, open_room_call, request_invite_code, transfer_pab};
 use visa::{Ticket, Visa, VisaType};
 use nft::{NFT, NFTSrc, NFTType};
 use record::{Record, RecordDetail, RecordContentType};
@@ -86,22 +86,6 @@ fn init(owner: Principal, lifeno: u64, inviter: Option<Principal>, nais: Princip
     }
 }
 
-
-#[update(name = "setToken")]
-#[candid_method(update, rename = "setToken")]
-fn set_token(pab:Option<Principal>, nft:Option<Principal>){
-    unsafe {
-        match pab {
-            Some(o) => PAB_TOKEN_CANISTER =o,
-            _ => {}
-        }
-        match nft {
-            Some(o) => PAB_NFT_CANISTER =o,
-            _ => {}
-        }
-    }
-}
-
 fn _only_owner() {
     unsafe {
        if OWNER != caller() {
@@ -131,6 +115,23 @@ fn _must_borned() {
        if BORN != true {
            ic_cdk::trap("not born");
        }
+    }
+}
+
+#[update(name = "setToken")]
+#[candid_method(update, rename = "setToken")]
+fn set_token(pab:Option<Principal>, nft:Option<Principal>){
+    _only_nais();
+    
+    unsafe {
+        match pab {
+            Some(o) => PAB_TOKEN_CANISTER =o,
+            _ => {}
+        }
+        match nft {
+            Some(o) => PAB_NFT_CANISTER =o,
+            _ => {}
+        }
     }
 }
 
@@ -266,11 +267,9 @@ pub fn rcv_nft(nft_type: NFTType, board: Principal, nft_id: String) {
 #[candid_method(update, rename = "ReceiveInviteCode")]
 pub async fn rcv_invite_code() -> Vec<String>{
     unsafe {
-        let res = request_invite_code(&NAIS).await;
-        match res {
-            Some(v) => v,
-            None => vec![]
-        }
+        request_invite_code(&NAIS)
+        .await
+        .unwrap_or(vec![])
     }
 }
 
@@ -296,15 +295,13 @@ async fn create_board() -> Principal{
     _only_owner();
 
     unsafe {
-        let board_id = create_board_call(&NAIS, caller()).await;
-        match board_id {
-            Some(id) => {
-                let mb = storage::get_mut::<MyBoards>();
-                mb.0.push(id);
-                id
-            }
-            None => ic_cdk::trap("create board error")
-        }
+        create_board_call(&NAIS, caller())
+        .await
+        .and_then(|bid| {
+            storage::get_mut::<MyBoards>().0.push(bid);
+            Some(bid)
+        })
+        .unwrap_or_else(|| ic_cdk::trap("create board error"))
     }
 }
 
@@ -316,11 +313,13 @@ async fn create_room(title: String, cover: Option<String>){
     let mb = storage::get_mut::<MyBoards>();
     if mb.0.len() <= 0 {
         unsafe {
-            let board_id = create_board_call(&NAIS, caller()).await;
-            match board_id {
-                Some(id) => mb.0.push(id),
-                None => ic_cdk::trap("create board error")
-            }
+            create_board_call(&NAIS, caller())
+            .await
+            .and_then(|bid| {
+                storage::get_mut::<MyBoards>().0.push(bid);
+                Some(bid)
+            })
+            .unwrap_or_else(|| ic_cdk::trap("create board error"));
         }
     }
     let _room_id = open_room_call(
@@ -328,29 +327,35 @@ async fn create_room(title: String, cover: Option<String>){
     ).await;
 }
 
+#[update(name = "DepositFee")]
+#[candid_method(update, rename = "DepositFee")]
+async fn deposit_fee(amount: String) -> bool{
+    _only_owner();
+
+    let mb = storage::get::<MyBoards>();
+    if mb.0.len() < 1 {
+        ic_cdk::trap("no board to deposit")
+    }
+    transfer_pab(unsafe{&PAB_TOKEN_CANISTER}, mb.0.get(0).unwrap(), amount)
+    .await.unwrap_or_else(|e| ic_cdk::trap(format!("transfer error: {}",e).as_str()))
+}
+
 #[query(name = "Follows")]
 #[candid_method(query, rename = "Follows")]
 fn follows() -> (Vec<(Principal, u64)>, Vec<(Principal, u64)>){
     _only_owner();
-
-    let mut followers: Vec<(Principal, u64)> = vec![];
-    let mut followings: Vec<(Principal, u64)> = vec![];
     let me = storage::get::<Human>();
-    match me.clone().connections {
-        None => (),
-        Some(c) => {
-            followers = c.followers;
-            followings = c.followings;
-        }
-    }
-
-    (followers, followings)
+    (me.connections.followers.clone(), me.connections.followings.clone())
 }
 
 #[update(name = "Follow")]
 #[candid_method(update, rename = "Follow")]
 async fn follow(f: Principal) {
     _only_owner();
+
+    if f == caller() {
+        ic_cdk::trap("cannot follow yourself");
+    }
 
     let me = storage::get_mut::<Human>();
     inter_call::follow(&f).await;
@@ -361,7 +366,6 @@ async fn follow(f: Principal) {
 #[candid_method(update, rename = "FollowMe")]
 fn follow_me() {
     _not_owner();
-
     let me = storage::get_mut::<Human>();
     me.add_followers(caller());
 }
@@ -382,36 +386,36 @@ fn talk(topic: TalkTopic) -> Vec<Principal> {
 #[candid_method(update, rename = "Listen")]
 pub async fn listen(board: Principal, room: String) -> String{
     _only_owner();
-    let res = inter_call::listen(&board, room, None).await;
-    match res {
-        Ok(session) => session,
-        Err(e) => ic_cdk::trap(e.as_str())
-    }
+    inter_call::listen(&board, room, None)
+    .await
+    .unwrap_or_else(|e| ic_cdk::trap(e.as_str()))
 }
 
 #[update(name = "Speak")]
 #[candid_method(update, rename = "Speak")]
-pub async fn speak(board: Principal, room: String) -> String{
+pub async fn speak(board: Principal, room: String){
     _only_owner();
-    let res = inter_call::speak(&board, room).await;
-    match res {
-        Ok(session) => session,
-        Err(e) => ic_cdk::trap(e.as_str())
-    }
+    inter_call::speak(&board, room)
+    .await
+}
+
+#[update(name = "Leave")]
+#[candid_method(update, rename = "Leave")]
+pub async fn leave(board: Principal, room: String){
+    _only_owner();
+    inter_call::leave(&board, room).await
 }
 
 #[update(name = "See")]
 #[candid_method(update, rename = "See")]
 fn see(){
     _only_owner();
-
 }
 
 #[update(name = "Like")]
 #[candid_method(update, rename = "Like")]
 fn like(){
     _not_owner();
-
     unsafe{
         LIKES += 1;
     }
@@ -438,9 +442,9 @@ fn paid(){
     }
 }
 
-#[update(name = "Pay")]
-#[candid_method(update, rename = "Pay")]
-fn pay(){
+#[update(name = "Incentive")]
+#[candid_method(update, rename = "Incentive")]
+fn incentive(){
     _only_nais();
     
     unsafe{

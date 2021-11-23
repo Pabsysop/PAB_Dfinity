@@ -229,3 +229,23 @@ pub async fn stop_call(args: StartStopArgs) -> Result<(), String> {
     };
     Ok(())
 }
+
+pub async fn mint_pab(pab_canister: &Principal, to: Principal, amount: String) -> Result<(), String> {
+
+    let (ret,): (String,) = match api::call::call(
+        pab_canister.clone(),
+        "transfer", 
+        (to,amount,)
+    ).await 
+    {
+        Ok(x) => x,
+        Err((code, msg)) => {
+            return Err(format!(
+                "An error happened during the call: {}: {}",
+                code as u8, msg
+            ))
+        }
+    };
+
+    Ok(())
+}
